@@ -38,8 +38,12 @@ Orbit Calculations:
 - Neptune = Earth * 30.04 = 15020 (2794.4 million miles)
 - Pluto   = Earth * 39.51 = 19755  (3674.5 million miles)
 
+Size of the Sun:
+864,400 miles across, 432,200 mile radius
+
 Advanced: Creating Saturn in Blender
 https://design.tutsplus.com/tutorials/how-to-create-a-saturn-infographic-with-blender-and-inkscape--cms-23257
 
-Good Thread on how to apply a texture radially in Three.js
+Good Thread on how to apply a textures radially in Three.js
 https://stackoverflow.com/questions/24634971/how-can-i-apply-a-radial-texture-to-a-ring-with-three-js-r67
+https://stackoverflow.com/questions/23633913/non-radial-texture-mapping-over-a-ring-geometry-in-webgl-using-three-js

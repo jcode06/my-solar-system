@@ -33,10 +33,17 @@ function init() {
   var texturePluto        = textureLoader.load( "assets/plutomap1k.jpg" );
 
   var textureSaturnRings  = textureLoader.load( "assets/saturnringcolor.jpg" );
-  var textureUranusRings  = textureLoader.load( "assets/uranusringcolour.jpg" );
+//  var textureUranusRings  = textureLoader.load( "assets/uranusringcolour.jpg" );
+  var textureUranusRings  = textureLoader.load( "assets/uranusringtrans.gif" );
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color().setHSL( 0.51, 0.4, 0.02 );
+
+  renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true });
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setSize( width, height );
+  document.body.appendChild( renderer.domElement );
 
   camera = new THREE.PerspectiveCamera(45, aspectRatio, 1, 100000);
   camera.position.y = 50;
@@ -68,8 +75,23 @@ function init() {
   }
 */
 
+//  var ambientLight = new THREE.AmbientLight(0xCCCCCC, 0.2);
+//  scene.add(ambientLight);
 
-  var pointLight = new THREE.PointLight(0xffffff, 0.5, 0, 1);
+  var hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x999999, 0.5);
+  scene.add(hemisphereLight);
+
+  var pointLight = new THREE.PointLight(0xffffff, 0.8, 0, 1);
+  pointLight.position.set(0, 0, 0);
+//  pointLight.castShadow = true;
+
+  scene.add(pointLight);
+
+//  var helper = new THREE.CameraHelper( pointLight.shadow.camera );
+//  scene.add( helper );
+
+
+
   // create our solar objects as the textures get loaded
   sun           = new THREE.Mesh(
                     new THREE.SphereGeometry(100, 64, 64),
@@ -77,7 +99,6 @@ function init() {
 //                    new THREE.MeshBasicMaterial( { map: textureSun, color: 0xFDFFA7 })
                   );
   pointLight.add(sun);
-  scene.add(pointLight);
 
   var earthSize = 50;
   var earthOrbit = 500;
@@ -116,7 +137,7 @@ function init() {
   curOrbit = earthOrbit * 1.52
   drawOrbit(curOrbit, lineSegments);
   planets.set("Mars",  createPlanet({
-    name: "Mars", texture: textureJupiter,
+    name: "Mars", texture: textureMars,
     orbit: curOrbit, speed: 4,
     radius: earthSize * .53, rotateSpeed: 0.975,
     color: 0xffffff,
@@ -136,7 +157,8 @@ function init() {
   curOrbit = earthOrbit * 9.53;
   drawOrbit(curOrbit, lineSegments);
   planets.set("Saturn",  createPlanetWithRings({
-    name: "Saturn", texture: textureSaturn, ringsTexture: textureSaturnRings, ringAngle: 90,
+    name: "Saturn", texture: textureSaturn,
+    ringsTexture: textureSaturnRings, ringAngle: 90, ringDistance: 100, ringSize: earthSize * 6.00,
     orbit: curOrbit, speed: 5.5,
     radius: earthSize * 9.45, rotateSpeed: 2.35,
     color: 0xffffff,
@@ -146,7 +168,8 @@ function init() {
   curOrbit = earthOrbit * 19.18;
   drawOrbit(curOrbit, lineSegments);
   planets.set("Uranus",  createPlanetWithRings({
-    name: "Uranus", texture: textureUranus, ringsTexture: textureUranusRings, ringAngle: 0,
+    name: "Uranus", texture: textureUranus,
+    ringsTexture: textureUranusRings, ringAngle: 0, ringDistance: 40, ringSize: earthSize * 2.00,
     orbit: curOrbit, speed: 8,
     radius: earthSize * 4.00, rotateSpeed: 1.34,
     color: 0xffffff,
@@ -186,17 +209,8 @@ function init() {
   createStars();
 
 
-//  var ambientLight = new THREE.AmbientLight(0xCCCCCC, 0.1);
-  var ambientLight = new THREE.AmbientLight(0xCCCCCC, 1.0);
-  scene.add(ambientLight);
-
-  var hemisphereLight = new THREE.AmbientLight(0xCCCCCC, 0x000000, 1.0);
-  scene.add(hemisphereLight);
 
 
-  renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true });
-  renderer.setSize( width, height );
-  document.body.appendChild( renderer.domElement );
 
 
 
@@ -234,6 +248,10 @@ function init() {
     var mesh      = new THREE.Mesh( geometry, material );
     mesh.name     = params.name + "Mesh";
     var planet    = new THREE.Group();
+
+//    mesh.castShadow = false;
+//    mesh.receiveShadow = true;
+
     planet.add(mesh);
     scene.add(planet);
 
@@ -254,51 +272,24 @@ function init() {
 
 
     // refactor this, maybe put it in its own THREE.js function, like RingGeometryV2 or something
-    var phiSegments = 32;
-    var thetaSegments = 32;
+    var phiSegments = 64;
+    var thetaSegments = 64;
     var thetaStart = thetaStart !== undefined ? thetaStart : 0;
   	var thetaLength = thetaLength !== undefined ? thetaLength : Math.PI * 2;
-    var innerRadius = params.radius - 50;
-    var outerRadius = params.radius + 150;
+    var innerRadius = params.radius + params.ringDistance;
+    var outerRadius = params.radius + params.ringDistance + params.ringSize;
     var radius = innerRadius;
     var radiusStep = ( ( outerRadius - innerRadius ) / phiSegments );
     var thetaStart = 0;
 
-    var geometry = new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, phiSegments);
-/*
-
-    var uvs = [];
-    var vertices = [];
-
-    for ( let j = 0; j <= phiSegments; j++ ) {
-      for ( let i = 0; i <= thetaSegments; i++ ) {
-
-        var vertex = new THREE.Vector3();
-  			var segment = thetaStart + i / thetaSegments * thetaLength;
-
-  			vertex.x = radius * Math.cos( segment );
-  			vertex.y = radius * Math.sin( segment );
-
-  			vertices.push( vertex );
-
-        uvs.push( new THREE.Vector2( j / thetaSegments, i / phiSegments ) );
-      }
-      radius += radiusStep;
-    }
-    geometry.verticesNeedUpdate = true;
-    geometry.vertices = vertices;
-
-    geometry.uvsNeedUpdate = true;
-    geometry.faceVertexUvs = uvs;
-*/
-//    var geometry = new THREE.RingGeometryV2(innerRadius, outerRadius, thetaSegments, phiSegments);
-
+//    var geometry = new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, phiSegments);
+    var geometry = new THREE.RingGeometryV2(innerRadius, outerRadius, thetaSegments, phiSegments);
 
     // add rings here
     var newMesh      = new THREE.Mesh(
       geometry,
-//      new THREE.MeshLambertMaterial( { map: params.ringsTexture, color: params.color, side: THREE.DoubleSide })
-      new THREE.MeshBasicMaterial( { map: params.ringsTexture, color: params.color, side: THREE.DoubleSide })
+      new THREE.MeshLambertMaterial( { map: params.ringsTexture, color: params.color, side: THREE.DoubleSide })
+//      new THREE.MeshBasicMaterial( { map: params.ringsTexture, color: params.color, side: THREE.DoubleSide })
     );
 
     // rotate the ring over
@@ -306,6 +297,9 @@ function init() {
     var rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), rotationRadians);
     newMesh.matrixAutoUpdate = false;
     newMesh.applyMatrix(rotation);
+
+//    newMesh.castShadow = true;
+//    newMesh.receiveShadow = true;
 
     planet.add(newMesh);
 
@@ -391,6 +385,9 @@ function init() {
         // rotation needs to be fixed, it's a little off
         var rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), rotationRadians);
 
+//xRadians = 1;
+//zRadians = 1;
+
         var x = (Math.sin(xRadians) * orbitSize);
         var y = 0;
         var z = (Math.sin(zRadians) * orbitSize);
@@ -410,9 +407,37 @@ function init() {
 
 } // end init
 
-/*
-//THREE.RingGeometryV2 = function( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength ) {
-function RingGeometryV2( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength ) {
+THREE.RingGeometryV2 = function ( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength ) {
+
+  THREE.Geometry.call( this );
+
+  this.type = 'RingGeometry';
+
+  this.parameters = {
+    innerRadius: innerRadius,
+    outerRadius: outerRadius,
+    thetaSegments: thetaSegments,
+    phiSegments: phiSegments,
+    thetaStart: thetaStart,
+    thetaLength: thetaLength
+  };
+
+  this.fromBufferGeometry( new THREE.RingBufferGeometryV2( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength ) );
+  this.mergeVertices();
+
+}
+
+THREE.RingGeometryV2.prototype = Object.create( THREE.Geometry.prototype );
+THREE.RingGeometryV2.prototype.constructor = THREE.RingGeometryV2;
+
+// RingBufferGeometryV2
+
+THREE.RingBufferGeometryV2 = function( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength ) {
+
+  THREE.BufferGeometry.call( this );
+
+  this.type = 'RingBufferGeometry';
+
   this.parameters = {
     innerRadius: innerRadius,
     outerRadius: outerRadius,
@@ -469,12 +494,14 @@ function RingGeometryV2( innerRadius, outerRadius, thetaSegments, phiSegments, t
       normals.push( 0, 0, 1 );
 
       // uv
-//      uv.x = ( vertex.x / outerRadius + 1 ) / 2;
-//      uv.y = ( vertex.y / outerRadius + 1 ) / 2;
-      uv.x = j / thetaSegments;
-      uv.y = i / phiSegments;
 
-      uvs.push( uv.x, uv.y );
+      uv.x = ( vertex.x / outerRadius + 1 ) / 2;
+      uv.y = ( vertex.y / outerRadius + 1 ) / 2;
+
+//				uvs.push( uv.x, uv.y );
+
+      // added this line to properly rotate the texture onto the geometry
+      uvs.push( j / thetaSegments, i / phiSegments );
 
     }
 
@@ -511,13 +538,13 @@ function RingGeometryV2( innerRadius, outerRadius, thetaSegments, phiSegments, t
   // build geometry
 
   this.setIndex( indices );
-  this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
-  this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
-  this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
+  this.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+  this.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+  this.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
 }
 
-RingGeometryV2.prototype = Object.create( THREE.BufferGeometry.prototype );
-RingGeometryV2.prototype.constructor = RingGeometryV2;
-*/
+THREE.RingBufferGeometryV2.prototype = Object.create( THREE.BufferGeometry.prototype );
+THREE.RingBufferGeometryV2.prototype.constructor = THREE.RingBufferGeometry;
+
 
 } )(THREE);
