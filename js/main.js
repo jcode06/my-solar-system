@@ -104,7 +104,7 @@ function init() {
     x: 0, y:0, z:0
   }) );
 
-  curOrbit = earthOrbit * 1.52
+  curOrbit = earthOrbit * 1.52;
   drawOrbit(curOrbit, lineSegments);
   planets.set("Mars",  createPlanet({
     name: "Mars", texture: textureMars,
@@ -179,8 +179,10 @@ function init() {
 */
 
   controls = new THREE.OrbitControls(camera, renderer.domElement);
-
   animate();
+
+
+// START FUNCTION DEFINITIONS ------------------------------------------------------
 
   function drawOrbit(radius = 200, segments = 360) {
     var material = new THREE.LineBasicMaterial({ color:0xffffff });
@@ -225,16 +227,10 @@ function init() {
   function createPlanetWithRings(params) {
     var planet = createPlanet(params);
 
-    // refactor this, maybe put it in its own THREE.js function, like RingGeometryV2 or something
     var phiSegments = 64;
     var thetaSegments = 64;
-    var thetaStart = thetaStart !== undefined ? thetaStart : 0;
-  	var thetaLength = thetaLength !== undefined ? thetaLength : Math.PI * 2;
     var innerRadius = params.radius + params.ringDistance;
     var outerRadius = params.radius + params.ringDistance + params.ringSize;
-    var radius = innerRadius;
-    var radiusStep = ( ( outerRadius - innerRadius ) / phiSegments );
-    var thetaStart = 0;
 
 //    var geometry = new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, phiSegments);
     var geometry = new THREE.RingGeometryV2(innerRadius, outerRadius, thetaSegments, phiSegments);
@@ -299,7 +295,6 @@ function init() {
     }
   }
 
-
   function animate() {
     requestAnimationFrame( animate );
 
@@ -315,7 +310,7 @@ function init() {
 
     renderer.render( scene, camera );
 
-// HELPERS ----------------------------------------------------------
+    // HELPERS ----------------------------------------------------------
 
     function _sunAnimate() {
       if(sun != undefined) {
