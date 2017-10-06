@@ -1,3 +1,5 @@
+// Main change is to rewrite the way uvs are mapped to the geometry
+
 ((THREE) => {
   THREE.RingGeometryV2 = function ( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength ) {
 
