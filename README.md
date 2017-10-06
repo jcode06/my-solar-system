@@ -3,7 +3,7 @@ A Basic Solar System Simulation
 
 TODOS:
 - Find a better way to draw the sun, such as using the shader below
-- Fix the rendering of the rings, so the pattern goes in the proper direction
+- Add shadows to the planets when applicable
 - Figure out how to draw stars in the background
 - Figure out how to draw asteroids
 - Enable explorer camera controls (FlyControls)
@@ -38,8 +38,16 @@ Orbit Calculations:
 - Neptune = Earth * 30.04 = 15020 (2794.4 million miles)
 - Pluto   = Earth * 39.51 = 19755  (3674.5 million miles)
 
-Size of the Sun:
-864,400 miles across, 432,200 mile radius
+Size of the Sun and Planets:
+Sun: 864,400 miles across, 432,200 mile radius
+Jupiter (69,911 km / 43,441 miles) – 1,120% the size of Earth
+Saturn (58,232 km / 36,184 miles) – 945% the size of Earth
+Uranus (25,362 km / 15,759 miles) – 400% the size of Earth
+Neptune (24,622 km / 15,299 miles) – 388% the size of Earth
+Earth (6,371 km / 3,959 miles)
+Venus (6,052 km / 3,761 miles) – 95% the size of Earth
+Mars (3,390 km / 2,460 miles) – 53% the size of Earth
+Mercury (2,440 km / 1,516 miles) – 38% the size of Earth
 
 Advanced: Creating Saturn in Blender
 https://design.tutsplus.com/tutorials/how-to-create-a-saturn-infographic-with-blender-and-inkscape--cms-23257
