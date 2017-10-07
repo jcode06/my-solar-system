@@ -8,6 +8,12 @@ TODOS:
 - Figure out how to draw asteroids
 - Enable explorer camera controls (FlyControls)
 - Add datGui menu for controlling zoom, camera, lighting, and other settings
+- Planet Rotations:
+  - Set planets rotations to counterclockwise
+  - Set Pluto's rotation direction to 120 degrees (on its side)
+- OPTIONAL:
+  - Figure out how to do Pluto's unusual orbit:
+    - https://airandspace.si.edu/exhibitions/exploring-the-planets/online/solar-system/pluto/orbit.cfm
 
 
 Textures courtesy of James Hastings-Trew via website links below

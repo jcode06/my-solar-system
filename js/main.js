@@ -80,6 +80,7 @@ function init() {
   var earthSize = 20; // 2.29
   var earthOrbit = 4 * sunSize;
   var earthSpeed = 10; // lower number = faster, higher number = slower
+  var earthRotateSpeed = 1;
   var lineSegments = 360;
 
   sun = new THREE.Mesh(
@@ -91,7 +92,7 @@ function init() {
                   );
   pointLight.add(sun);
 
-  orbits.set("Mercury", earthOrbit * .52);
+  orbits.set("Mercury", earthOrbit * .57);
   orbits.set("Venus", earthOrbit * .72);
   orbits.set("Earth", earthOrbit);
   orbits.set("Mars", earthOrbit * 1.52);
@@ -129,7 +130,7 @@ function init() {
   createPlanet({
     name: "Mercury", texture: textureMercury,
     orbit: orbits.get("Mercury"), speed: earthSpeed * .4,
-    radius: earthSize * .38, rotateSpeed: 0.017,
+    radius: earthSize * .38, rotateSpeed: earthRotateSpeed * 0.1,
     color: 0xffffff,
     x: 0, y:0, z:0
   });
@@ -138,14 +139,14 @@ function init() {
     name: "Venus", texture: textureVenus,
     orbit: orbits.get("Venus"), speed: earthSpeed * .6,
     radius: earthSize * .95,
-    color: 0xffffff, rotateSpeed: 0.004,
+    color: 0xffffff, rotateSpeed: earthRotateSpeed * 0.2,
     x: 0, y:0, z:0
   });
 
   createPlanet({
     name: "Earth", texture: textureEarth,
     orbit: orbits.get("Earth"), speed: earthSpeed,
-    radius: earthSize, rotateSpeed: 1,
+    radius: earthSize, rotateSpeed: earthRotateSpeed,
     color: 0x2194ce,
     x: 0, y:0, z:0
   });
@@ -153,7 +154,7 @@ function init() {
   createPlanet({
     name: "Mars", texture: textureMars,
     orbit: orbits.get("Mars"), speed: earthSpeed * 1.2,
-    radius: earthSize * .53, rotateSpeed: 0.975,
+    radius: earthSize * .53, rotateSpeed: earthRotateSpeed * 0.975,
     color: 0xffffff,
     x: 0, y:0, z:0
   });
@@ -162,7 +163,7 @@ function init() {
     name: "Jupiter", texture: textureJupiter,
     orbit: orbits.get("Jupiter"), speed: earthSpeed * 1.4,
     radius: earthSize * 11.20,
-    color: 0xffffff, rotateSpeed: 2.43,
+    color: 0xffffff, rotateSpeed: earthRotateSpeed * 2.43,
     x: 0, y:0, z:0
   });
 
@@ -171,7 +172,7 @@ function init() {
     ringsTexture: textureSaturnRings, ringAngle: 90,
     ringDistance: earthSize * 2.0, ringSize: earthSize * 6.00,
     orbit: orbits.get("Saturn"), speed: earthSpeed * 1.5,
-    radius: earthSize * 9.45, rotateSpeed: 2.35,
+    radius: earthSize * 9.45, rotateSpeed: earthRotateSpeed * 2.35,
     color: 0xffffff,
     x: 0, y:0, z:0
   });
@@ -181,7 +182,7 @@ function init() {
     ringsTexture: textureUranusRings, ringAngle: 0,
     ringDistance: earthSize * 1.5, ringSize: earthSize * 2.00,
     orbit: orbits.get("Uranus"), speed: earthSpeed * 2.0,
-    radius: earthSize * 4.00, rotateSpeed: 1.34,
+    radius: earthSize * 4.00, rotateSpeed: earthRotateSpeed * 1.34,
     color: 0xffffff,
     x: 0, y:0, z:0
   });
@@ -189,7 +190,7 @@ function init() {
   createPlanet({
     name: "Neptune", texture: textureNeptune,
     orbit: orbits.get("Neptune"), speed: earthSpeed * 2.5,
-    radius: earthSize * 3.88, rotateSpeed: 1.25,
+    radius: earthSize * 3.88, rotateSpeed: earthRotateSpeed * 1.25,
     color: 0xffffff,
     x: 0, y:0, z:0
   });
@@ -197,7 +198,7 @@ function init() {
   createPlanet({
     name: "Pluto", texture: texturePluto,
     orbit: orbits.get("Pluto"), speed: earthSpeed * 3.0,
-    radius: earthSize * 0.19, rotateSpeed: 0.15,
+    radius: earthSize * 0.19, rotateSpeed: earthRotateSpeed * 0.3,
     color: 0xffffff,
     x: 0, y:0, z:0
   });
@@ -247,6 +248,7 @@ function init() {
 
     planet.add(mesh);
     scene.add(planet);
+
     // set planet properties
     for(let key in params) {
       if( ["name", "orbit", "speed", "rotateSpeed",
@@ -256,7 +258,7 @@ function init() {
     }
     planet.position.set(params.x, params.y, params.z);
 
-    planets.set(params.name, planet)
+    planets.set(params.name, planet);
 
     return planet;
   }
@@ -296,7 +298,7 @@ function init() {
     var stars1 = 50; // 250
     var stars2 = 375; // 1500
 
-    var i, r = 1000, starsGeometry = [ new THREE.Geometry(), new THREE.Geometry() ];
+    var i, r = 2000, starsGeometry = [ new THREE.Geometry(), new THREE.Geometry() ];
     for ( i = 0; i < stars1; i ++ ) {
       var vertex = new THREE.Vector3();
       vertex.x = Math.random() * 2 - 1;
@@ -380,8 +382,18 @@ function init() {
         var zRadians = (count/planet.speed + 90) * Math.PI/180;
 
         // rotation needs to be fixed, it's a little off
-        var rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), rotationRadians);
+        var rotation;
+        if(planet.name == "Uranus") {
+          rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), rotationRadians);
+        }
+        else if(planet.name == "Venus") {
+          rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), -rotationRadians);
+        }
+        else {
+          rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), rotationRadians);
+        }
 
+//orbitSize /= 10;
 //xRadians = 1;
 //zRadians = 1;
 
