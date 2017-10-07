@@ -17,15 +17,19 @@ var width = window.innerWidth;
 var height = window.innerHeight;
 var aspectRatio = width / height;
 
+var clock;
 var sunUniforms, sunDisplacement, sunNoise;
 var guiControls;
 
 function init() {
+  clock = new THREE.Clock();
+
   // TEXTURES
   var textureLoader       = new THREE.TextureLoader();
   var textureFlare0       = textureLoader.load( "assets/lensflare0.png");
   var textureFlare2       = textureLoader.load( "assets/lensflare2.png");
   var textureSun          = textureLoader.load( "assets/sunmap.jpg" );
+  var textureSun2         = textureLoader.load( "assets/sunTexture.jpg" );
   var textureEarth        = textureLoader.load( "assets/earthmap1k.jpg" );
   var textureMercury      = textureLoader.load( "assets/mercurymap.jpg" );
   var textureVenus        = textureLoader.load( "assets/venusmap.jpg" );
@@ -87,7 +91,11 @@ function init() {
   sunUniforms = {
     amplitude: { value: 1.0 },
     color: { value: new THREE.Color(0xff2200) },
-    texture: { value: textureSun }
+//    texture: { value: textureSun },
+    texture: { value: textureSun2 },
+    sphereTexture: { value: textureSun2 },
+    iTime: { value: 0.1 },
+    brightnessMultiplier: { value: 7.0 }
   }
   sunUniforms.texture.value.wrapS = sunUniforms.texture.value.wrapT = THREE.RepeatWrapping;
 
@@ -373,21 +381,29 @@ function init() {
   }
 
   function setupGui() {
+    // initialize the guiControls
     guiControls = {
-      r: 0.0,
-      g: 0.0,
+      r: 255.0,
+      g: 225.0,
       b: 0.0,
-      amplitude: 8.0
+      amplitude: 8.0,
+      displacement: 0,
+      noise: 0,
+      timeFactor: -0.15,
+      brightness: 7.0
     }
 
     var gui = new dat.GUI();
     var folder = gui.addFolder("Sun Controls");
 
-    folder.add(guiControls, "r", 0.0, 255.0, 1.0).name("red").listen();
-    folder.add(guiControls, "g", 0.0, 255.0, 1.0).name("green").listen();
-    folder.add(guiControls, "b", 0.0, 255.0, 1.0).name("blue").listen();
-    folder.add(guiControls, "amplitude", 0.0, 100.0, 0.1).name("amplitude").listen();
-
+    folder.add(guiControls, "r", 0.0, 255.0, 1.0).name("Red").listen();
+    folder.add(guiControls, "g", 0.0, 255.0, 1.0).name("Green").listen();
+    folder.add(guiControls, "b", 0.0, 255.0, 1.0).name("Blue").listen();
+    folder.add(guiControls, "amplitude", 0.0, 100.0, 0.1).name("Amplitude").listen();
+    folder.add(guiControls, "displacement", 0.0, 360.0, 1.0).name("Displacement").listen();
+    folder.add(guiControls, "noise", -15.0, 15.0, 0.1).name("Noise").listen();
+    folder.add(guiControls, "timeFactor", -5.0, 5.0, 0.05).name("Rotation");
+    folder.add(guiControls, "brightness", -20.0, 20.0, 0.1).name("Brightness");
   }
 
   function animate() {
@@ -397,61 +413,70 @@ function init() {
 
     var time = Date.now() * .01;
 
-    _sunAnimate();
+    _animateSun(time);
 
     planets.forEach( (value, key, map) => {
-      _animatePlanet(value);
+      _animatePlanet(time, value);
     });
 
     renderer.render( scene, camera );
 
     // HELPERS ----------------------------------------------------------
 
-    function _sunAnimate() {
+    function _animateSun(curTime) {
       if(sun != undefined) {
-        var rotationRadians = time * Math.PI/180;
+        var rotationRadians = curTime * Math.PI/180;
+        var timeRadians = curTime*5 * Math.PI/180
 
-        var timeRadians = time*5 * Math.PI/180
+        sunUniforms.iTime.value += clock.getDelta() * guiControls.timeFactor;
+        sunUniforms.brightnessMultiplier.value = guiControls.brightness;
 
         // Amplitude controls the amount of fuzziness in the border, as well as
         // rotation within the vertex
         sunUniforms.amplitude.value = guiControls.amplitude * Math.sin( timeRadians * 0.125 );
-//  			sunUniforms.color.value.offsetHSL( 0.005, 0, 0 );
 
-        guiControls.r = 255;
-        guiControls.g = 80 + Math.abs( Math.sin( timeRadians ) ) * 120.0;
-        guiControls.b = 0;
+//        guiControls.g = 80 + Math.abs( Math.sin( timeRadians ) ) * 120.0;
 
         var r = guiControls.r/255, g = guiControls.g/255, b = guiControls.b/255;
         sunUniforms.color.value.setRGB( r, g, b );
 
+        var displacementRadians = guiControls.displacement * Math.PI/180;
+
         for ( var i = 0; i < sunDisplacement.length; i ++ ) {
 
-    				sunDisplacement[ i ] = Math.sin( 5.0 * i + time );
-
+//    				sunDisplacement[ i ] = (Math.sin(5.0 * i + Date.now() * Math.PI/180 ) + 5.5) / 2;
+//    				sunDisplacement[ i ] = Math.sin( 5.0 * i + curTime );
+/*
+            // -0.25 to 0.25
    				  sunNoise[ i ] += 0.5 * ( 0.5 - Math.random() );
-    				sunNoise[ i ] = THREE.Math.clamp( sunNoise[ i ], -5, 5 );
+    				sunNoise[ i ] = THREE.Math.clamp( sunNoise[ i ], -2, 15 );
 
     				sunDisplacement[ i ] += sunNoise[ i ];
+*/
+//            sunDisplacement[ i ] = Math.sin( displacementRadians * i );
 
+
+//            sunNoise[ i ] += 0.02 * ( 0.5 - Math.random() );
+//            sunDisplacement[ i ] += sunNoise[ i ];
+//            sunDisplacement[ i ] += guiControls.noise * Math.random();
   			}
 
   			sun.geometry.attributes.displacement.needsUpdate = true;
 
         sun.matrixAutoUpdate = false;
-        sun.matrix.makeRotationY(rotationRadians);
+//        sun.matrix.makeRotationY(rotationRadians);
       }
     } // end _sunAnimate()
 
-    function _animatePlanet(planet) {
+    function _animatePlanet(curTime, planet) {
       if(planet != undefined) {
         var orbitSize = planet.orbit;
 
         var planetMesh = planet.getObjectByName(planet.name + "Mesh");
 
         var rotationRadians = planet.rotateSpeed * Math.PI/180;
-        var xRadians = time/planet.speed * Math.PI/180;
-        var zRadians = (time/planet.speed + 90) * Math.PI/180;
+        var xRadians = curTime/planet.speed * Math.PI/180;
+        var zRadians = (curTime/planet.speed + 90) * Math.PI/180;
 
         // rotation needs to be fixed, it's a little off
         var rotation;

@@ -2,7 +2,8 @@ A Basic Solar System Simulation
 - First WebGL Project, helps with understanding rotation, translation in WebGL/Three.js better, as well as shaders/GLSL.
 
 TODOS:
-- Find a better way to draw the sun, such as using the shader below
+- Corona for Sun: In order to get a corona-like effect, we will probably have to do it by manipulating the shape, don't think it can be done within the fragment shader itself, since we're using it as a texture.
+- Sun Texture: There's an obvious break in the texture overlay, figure out how to smooth it out
 - Figure out a way to make the smaller planets more visible in relation to the sun, right now they are too small
 - Add shadows to the planets when applicable
 - Asteroid belt between Mars and Jupiter
@@ -19,6 +20,9 @@ Textures courtesy of James Hastings-Trew via website links below
 http://planetpixelemporium.com/index.php
 http://planetpixelemporium.com/planets.html
 Purely for educational, non-commercial use in this instance
+
+Another Great Source of Textures:
+https://www.solarsystemscope.com/textures
 
 Cool Shader of the Sun:
 https://www.shadertoy.com/view/4dXGR4
@@ -58,6 +62,9 @@ Orbit Calculations:
 - Neptune = Earth * 30.04 = 15020 (2794.4 million miles)
 - Pluto   = Earth * 39.51 = 19755  (3674.5 million miles)
 
+100,000 Stars, includes a model of the solar system
+http://stars.chromeexperiments.com/
+https://www.html5rocks.com/en/tutorials/casestudies/100000stars/
 
 Advanced: Creating Saturn in Blender
 https://design.tutsplus.com/tutorials/how-to-create-a-saturn-infographic-with-blender-and-inkscape--cms-23257
@@ -66,5 +73,6 @@ Good Thread on how to apply a textures radially in Three.js
 https://stackoverflow.com/questions/24634971/how-can-i-apply-a-radial-texture-to-a-ring-with-three-js-r67
 https://stackoverflow.com/questions/23633913/non-radial-texture-mapping-over-a-ring-geometry-in-webgl-using-three-js
 
-Dat GUI:
+Dat GUI & Tutorial:
 https://github.com/dataarts/dat.gui
+http://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
