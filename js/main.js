@@ -1,4 +1,4 @@
-( (THREE) => {
+( (THREE, dat, exports) => {
   "use strict";
 
 // textures courtesy of James Hastings-Trew via website links below
@@ -16,7 +16,9 @@ var orbits = new Map();
 var width = window.innerWidth;
 var height = window.innerHeight;
 var aspectRatio = width / height;
-var count = 0;
+
+var sunUniforms, sunDisplacement, sunNoise;
+var guiControls;
 
 function init() {
   // TEXTURES
@@ -73,25 +75,47 @@ function init() {
 
   window.addEventListener( 'resize', onWindowResize, false );
 
-
   // create our solar objects as the textures get loaded
   // size the system in relation to earth and the sun
   var sunSize   = 300;
   var earthSize = 20; // 2.29
   var earthOrbit = 4 * sunSize;
-  var earthSpeed = 10; // lower number = faster, higher number = slower
+  var earthSpeed = 1; // lower number = faster, higher number = slower
   var earthRotateSpeed = 1;
   var lineSegments = 360;
 
+  sunUniforms = {
+    amplitude: { value: 1.0 },
+    color: { value: new THREE.Color(0xff2200) },
+    texture: { value: textureSun }
+  }
+  sunUniforms.texture.value.wrapS = sunUniforms.texture.value.wrapT = THREE.RepeatWrapping;
+
+  var shaderMaterial = new THREE.ShaderMaterial({
+    uniforms: sunUniforms,
+    vertexShader: exports.shader.vertex,
+    fragmentShader: exports.shader.fragment
+  });
+
+  var sunGeometry = new THREE.SphereBufferGeometry(sunSize, 64, 64),
+
+  sunDisplacement = new Float32Array( sunGeometry.attributes.position.count );
+  sunNoise        = new Float32Array( sunGeometry.attributes.position.count );
+
+  for( let i=0; i < sunDisplacement.length; i++) {
+    sunNoise[i] = Math.random() * 5;
+  }
+  sunGeometry.addAttribute('displacement', new THREE.BufferAttribute(sunDisplacement, 1) );
+
   sun = new THREE.Mesh(
-          new THREE.SphereGeometry(sunSize, 64, 64),
-    //      new THREE.SphereGeometry(100, 64, 64),
-          new THREE.MeshPhongMaterial( { emissive: 0xffa100, emissiveIntensity: 0.9, emissiveMap: textureSun, color: 0xa36c00 })
-//          new THREE.MeshPhongMaterial( { emissive: 0xFDFFA7, emissiveIntensity: 0.2, emissiveMap: textureSun, color: 0xFDFFA7 })
+          sunGeometry,
+          shaderMaterial
+    //    new THREE.MeshPhongMaterial( { emissive: 0xffa100, emissiveIntensity: 0.9, emissiveMap: textureSun, color: 0xa36c00 })
     //    new THREE.MeshBasicMaterial( { map: textureSun, color: 0xFDFFA7 })
-                  );
+  );
   pointLight.add(sun);
 
+  // create orbit sizes
   orbits.set("Mercury", earthOrbit * .57);
   orbits.set("Venus", earthOrbit * .72);
   orbits.set("Earth", earthOrbit);
@@ -216,6 +240,9 @@ function init() {
 */
 
   controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+  setupGui();
+
   animate();
 
 
@@ -345,12 +372,30 @@ function init() {
     }
   }
 
+  function setupGui() {
+    guiControls = {
+      r: 0.0,
+      g: 0.0,
+      b: 0.0,
+      amplitude: 8.0
+    }
+
+    var gui = new dat.GUI();
+    var folder = gui.addFolder("Sun Controls");
+
+    folder.add(guiControls, "r", 0.0, 255.0, 1.0).name("red").listen();
+    folder.add(guiControls, "g", 0.0, 255.0, 1.0).name("green").listen();
+    folder.add(guiControls, "b", 0.0, 255.0, 1.0).name("blue").listen();
+    folder.add(guiControls, "amplitude", 0.0, 100.0, 0.1).name("amplitude").listen();
+
+  }
+
   function animate() {
     requestAnimationFrame( animate );
 
     controls.update();
 
-    var count = Date.now() * .05;
+    var time = Date.now() * .01;
 
     _sunAnimate();
 
@@ -364,10 +409,37 @@ function init() {
 
     function _sunAnimate() {
       if(sun != undefined) {
-        var radians = count/5 * Math.PI/180;
+        var rotationRadians = time * Math.PI/180;
+
+        var timeRadians = time*5 * Math.PI/180
+
+        // Amplitude controls the amount of fuzziness in the border, as well as
+        // rotation within the vertex
+        sunUniforms.amplitude.value = guiControls.amplitude * Math.sin( timeRadians * 0.125 );
+//  			sunUniforms.color.value.offsetHSL( 0.005, 0, 0 );
+
+        guiControls.r = 255;
+        guiControls.g = 80 + Math.abs( Math.sin( timeRadians ) ) * 120.0;
+        guiControls.b = 0;
+
+        var r = guiControls.r/255, g = guiControls.g/255, b = guiControls.b/255;
+        sunUniforms.color.value.setRGB( r, g, b );
+
+        for ( var i = 0; i < sunDisplacement.length; i ++ ) {
+
+    				sunDisplacement[ i ] = Math.sin( 5.0 * i + time );
+
+   				  sunNoise[ i ] += 0.5 * ( 0.5 - Math.random() );
+    				sunNoise[ i ] = THREE.Math.clamp( sunNoise[ i ], -5, 5 );
+
+    				sunDisplacement[ i ] += sunNoise[ i ];
+
+  			}
+
+  			sun.geometry.attributes.displacement.needsUpdate = true;
 
         sun.matrixAutoUpdate = false;
-        sun.matrix.makeRotationY(radians);
+        sun.matrix.makeRotationY(rotationRadians);
       }
     } // end _sunAnimate()
 
@@ -378,8 +450,8 @@ function init() {
         var planetMesh = planet.getObjectByName(planet.name + "Mesh");
 
         var rotationRadians = planet.rotateSpeed * Math.PI/180;
-        var xRadians = count/planet.speed * Math.PI/180;
-        var zRadians = (count/planet.speed + 90) * Math.PI/180;
+        var xRadians = time/planet.speed * Math.PI/180;
+        var zRadians = (time/planet.speed + 90) * Math.PI/180;
 
         // rotation needs to be fixed, it's a little off
         var rotation;
@@ -426,4 +498,4 @@ function init() {
 
 
 
-} )(THREE);
+} )(THREE, dat, window.exports);

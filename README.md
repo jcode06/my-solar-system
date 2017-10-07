@@ -5,14 +5,13 @@ TODOS:
 - Find a better way to draw the sun, such as using the shader below
 - Figure out a way to make the smaller planets more visible in relation to the sun, right now they are too small
 - Add shadows to the planets when applicable
-- Figure out how to draw asteroids
+- Asteroid belt between Mars and Jupiter
+  - Figure out how to draw asteroids
 - Enable explorer camera controls (FlyControls)
 - Add datGui menu for controlling zoom, camera, lighting, and other settings
-- Planet Rotations:
-  - Set planets rotations to counterclockwise
-  - Set Pluto's rotation direction to 120 degrees (on its side)
 - OPTIONAL:
   - Figure out how to do Pluto's unusual orbit:
+    - Set Pluto's rotation direction to 120 degrees (on its side)
     - https://airandspace.si.edu/exhibitions/exploring-the-planets/online/solar-system/pluto/orbit.cfm
 
 
@@ -23,6 +22,9 @@ Purely for educational, non-commercial use in this instance
 
 Cool Shader of the Sun:
 https://www.shadertoy.com/view/4dXGR4
+
+Interesting way to use displacement and amplitude to change parts of a sphere:
+https://threejs.org/examples/webgl_custom_attributes.html
 
 Shader Converter, ShaderFrog
 https://stackoverflow.com/a/32577051/4906991
@@ -63,3 +65,6 @@ https://design.tutsplus.com/tutorials/how-to-create-a-saturn-infographic-with-bl
 Good Thread on how to apply a textures radially in Three.js
 https://stackoverflow.com/questions/24634971/how-can-i-apply-a-radial-texture-to-a-ring-with-three-js-r67
 https://stackoverflow.com/questions/23633913/non-radial-texture-mapping-over-a-ring-geometry-in-webgl-using-three-js
+
+Dat GUI:
+https://github.com/dataarts/dat.gui
