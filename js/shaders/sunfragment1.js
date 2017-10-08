@@ -92,9 +92,9 @@ void main() {
 	// 1. Start with a base brightness for the orange
 	// 2. Add in the star sphere
 	// 3. Add in the star glow
-	gl_FragColor.rgb	= baseBrightness;
-	gl_FragColor.rgb	+= starSphere * orange;
-	gl_FragColor.rgb	+= starGlow * orangeRed;
+	gl_FragColor.rgb = baseBrightness;
+	gl_FragColor.rgb += starSphere * orange;
+	gl_FragColor.rgb += starGlow * orangeRed;
 	gl_FragColor.a = 1.0;
 }
 `;

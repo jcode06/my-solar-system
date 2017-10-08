@@ -18,7 +18,7 @@ var height = window.innerHeight;
 var aspectRatio = width / height;
 
 var clock;
-var sunUniforms, sunDisplacement, sunNoise;
+var sunUniforms, glowUniforms, sunDisplacement, sunNoise;
 var guiControls;
 
 function init() {
@@ -88,6 +88,21 @@ function init() {
   var earthRotateSpeed = 1;
   var lineSegments = 360;
 
+  glowUniforms = {
+    glowFactor: { value: 0.3 },
+    glowPower: { value: 1.25 },
+    vNormMultiplier: { value: 1.0 }
+  }
+
+  var glowMaterial = new THREE.ShaderMaterial({
+    uniforms: glowUniforms,
+    vertexShader:   exports.shaderGlow.vertex,
+    fragmentShader: exports.shaderGlow.fragment,
+    side: THREE.BackSide,
+		blending: THREE.AdditiveBlending,
+		transparent: true
+  });
+
   sunUniforms = {
     amplitude: { value: 1.0 },
     color: { value: new THREE.Color(0xff2200) },
@@ -122,6 +137,10 @@ function init() {
     //    new THREE.MeshBasicMaterial( { map: textureSun, color: 0xFDFFA7 })
   );
   pointLight.add(sun);
+
+  var ballGeometry = new THREE.SphereGeometry( sunSize + 250, 32, 16 );
+	var ball = new THREE.Mesh( ballGeometry, glowMaterial );
+  pointLight.add(ball);
 
   // create orbit sizes
   orbits.set("Mercury", earthOrbit * .57);
@@ -388,9 +407,13 @@ function init() {
       b: 0.0,
       amplitude: 8.0,
       displacement: 0,
-      noise: 0,
+      noise: 1.0,
       timeFactor: -0.15,
-      brightness: 7.0
+      brightness: 7.0,
+
+      glowFactor: 0.4,
+      glowPower: 1.50,
+      vNormMultiplier: 1.0
     }
 
     var gui = new dat.GUI();
@@ -404,6 +427,12 @@ function init() {
     folder.add(guiControls, "noise", -15.0, 15.0, 0.1).name("Noise").listen();
     folder.add(guiControls, "timeFactor", -5.0, 5.0, 0.05).name("Rotation");
     folder.add(guiControls, "brightness", -20.0, 20.0, 0.1).name("Brightness");
+
+    var folder = gui.addFolder("Sun Glow Controls");
+
+    folder.add(guiControls, "glowFactor", -4.0, 3.0, 0.01).name("Glow Factor");
+    folder.add(guiControls, "glowPower", 0.01, 5.0, 0.01).name("Glow Power");
+    folder.add(guiControls, "vNormMultiplier", 0.01, 5.0, 0.01).name("V Norm Multiplier");
   }
 
   function animate() {
@@ -431,6 +460,10 @@ function init() {
         sunUniforms.iTime.value += clock.getDelta() * guiControls.timeFactor;
         sunUniforms.brightnessMultiplier.value = guiControls.brightness;
 
+        glowUniforms.glowFactor.value = guiControls.glowFactor;
+        glowUniforms.glowPower.value = guiControls.glowPower;
+        glowUniforms.vNormMultiplier.value = guiControls.vNormMultiplier;
+
         // Amplitude controls the amount of fuzziness in the border, as well as
         // rotation within the vertex
         sunUniforms.amplitude.value = guiControls.amplitude * Math.sin( timeRadians * 0.125 );
@@ -453,12 +486,12 @@ function init() {
 
     				sunDisplacement[ i ] += sunNoise[ i ];
 */
-//            sunDisplacement[ i ] = Math.sin( displacementRadians * i );
+            sunDisplacement[ i ] = Math.sin( displacementRadians * i );
 
 
 //            sunNoise[ i ] += 0.02 * ( 0.5 - Math.random() );
 //            sunDisplacement[ i ] += sunNoise[ i ];
-//            sunDisplacement[ i ] += guiControls.noise * Math.random();
+            sunDisplacement[ i ] += guiControls.noise * Math.max( (Math.random() / 2 + 0.5), 0.2);
   			}
 
   			sun.geometry.attributes.displacement.needsUpdate = true;

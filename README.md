@@ -2,6 +2,12 @@ A Basic Solar System Simulation
 - First WebGL Project, helps with understanding rotation, translation in WebGL/Three.js better, as well as shaders/GLSL.
 
 TODOS:
+- Refactor:
+  - Put the Sun and Planets into their own classes
+  - Two methods:
+    - create - called on instantiation
+    - update - called in the animate function
+  - Make it easier to add globals to the dat.gui menu, so we can more easily manipulate the scene
 - Corona for Sun: In order to get a corona-like effect, we will probably have to do it by manipulating the shape, don't think it can be done within the fragment shader itself, since we're using it as a texture.
 - Sun Texture: There's an obvious break in the texture overlay, figure out how to smooth it out
 - Figure out a way to make the smaller planets more visible in relation to the sun, right now they are too small
@@ -76,3 +82,8 @@ https://stackoverflow.com/questions/23633913/non-radial-texture-mapping-over-a-r
 Dat GUI & Tutorial:
 https://github.com/dataarts/dat.gui
 http://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
+
+Useful thread and examples by Lee Stemkoski on adding a glow:
+https://stackoverflow.com/questions/16269815/three-js-outer-glow-for-sphere-object
+http://stemkoski.github.io/Three.js/Selective-Glow.html
+http://stemkoski.github.io/Three.js/Shader-Halo.html
