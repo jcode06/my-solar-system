@@ -10,7 +10,7 @@ window.addEventListener("load", init, false);
 
 var scene, camera, renderer, controls; // global vars needed throughout the program
 var cube, sphere;
-var sun, earth;
+var sun, sunGlow, earth;
 var planets = new Map();
 var orbits = new Map();
 var width = window.innerWidth;
@@ -58,8 +58,8 @@ function init() {
 
   // CAMERA
   camera = new THREE.PerspectiveCamera(45, aspectRatio, 5, 500000);
-  camera.position.y = 50;
-  camera.position.z = 1000;
+  camera.position.y = 735;
+  camera.position.z = 2935;
 
 //  var helper = new THREE.CameraHelper( camera );
 //  scene.add( helper );
@@ -68,7 +68,7 @@ function init() {
   var hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x999999, 0.2);
   scene.add(hemisphereLight);
 
-  var pointLight = new THREE.PointLight(0xffffff, 0.8, 0, 1);
+  var pointLight = new THREE.PointLight(0xffffff, 1.0, 0, 1);
   pointLight.position.set(0, 0, 0);
 //  pointLight.castShadow = true;
 
@@ -91,7 +91,12 @@ function init() {
   glowUniforms = {
     glowFactor: { value: 0.3 },
     glowPower: { value: 1.25 },
-    vNormMultiplier: { value: 1.0 }
+    vNormMultiplier: { value: 1.0 },
+    viewVector: { type: "v3", value: camera.position },
+    iTime: { value: 0.1 },
+    bumpTexture: { value: textureSun2 },
+    bumpScale: { value: 40.0 },
+    bumpSpeed: { value: 1.5 }
   }
 
   var glowMaterial = new THREE.ShaderMaterial({
@@ -105,12 +110,12 @@ function init() {
 
   sunUniforms = {
     amplitude: { value: 1.0 },
-    color: { value: new THREE.Color(0xff2200) },
 //    texture: { value: textureSun },
     texture: { value: textureSun2 },
     sphereTexture: { value: textureSun2 },
     iTime: { value: 0.1 },
-    brightnessMultiplier: { value: 7.0 }
+    brightnessMultiplier: { value: 7.0 },
+    iResolution: { value: new THREE.Vector2(width, height) }
   }
   sunUniforms.texture.value.wrapS = sunUniforms.texture.value.wrapT = THREE.RepeatWrapping;
 
@@ -136,11 +141,13 @@ function init() {
     //    new THREE.MeshPhongMaterial( { emissive: 0xffa100, emissiveIntensity: 0.9, emissiveMap: textureSun, color: 0xa36c00 })
     //    new THREE.MeshBasicMaterial( { map: textureSun, color: 0xFDFFA7 })
   );
+  sun.name = "Sun";
   pointLight.add(sun);
 
   var ballGeometry = new THREE.SphereGeometry( sunSize + 250, 32, 16 );
-	var ball = new THREE.Mesh( ballGeometry, glowMaterial );
-  pointLight.add(ball);
+	sunGlow = new THREE.Mesh( ballGeometry, glowMaterial );
+  sunGlow.name = "SunGlow";
+  pointLight.add(sunGlow);
 
   // create orbit sizes
   orbits.set("Mercury", earthOrbit * .57);
@@ -402,26 +409,24 @@ function init() {
   function setupGui() {
     // initialize the guiControls
     guiControls = {
-      r: 255.0,
-      g: 225.0,
-      b: 0.0,
       amplitude: 8.0,
       displacement: 0,
       noise: 1.0,
       timeFactor: -0.15,
-      brightness: 7.0,
+      brightness: 8.0,
 
-      glowFactor: 0.4,
-      glowPower: 1.50,
-      vNormMultiplier: 1.0
+      glowFactor: 0.28,
+      glowPower: 7.33,
+      glowTimeFactor: 1.5,
+      vNormMultiplier: 1.0,
+      size: 1,
+      bumpScale: 61.0,
+      bumpSpeed: 0.60
     }
 
     var gui = new dat.GUI();
     var folder = gui.addFolder("Sun Controls");
 
-    folder.add(guiControls, "r", 0.0, 255.0, 1.0).name("Red").listen();
-    folder.add(guiControls, "g", 0.0, 255.0, 1.0).name("Green").listen();
-    folder.add(guiControls, "b", 0.0, 255.0, 1.0).name("Blue").listen();
     folder.add(guiControls, "amplitude", 0.0, 100.0, 0.1).name("Amplitude").listen();
     folder.add(guiControls, "displacement", 0.0, 360.0, 1.0).name("Displacement").listen();
     folder.add(guiControls, "noise", -15.0, 15.0, 0.1).name("Noise").listen();
@@ -430,9 +435,13 @@ function init() {
 
     var folder = gui.addFolder("Sun Glow Controls");
 
-    folder.add(guiControls, "glowFactor", -4.0, 3.0, 0.01).name("Glow Factor");
-    folder.add(guiControls, "glowPower", 0.01, 5.0, 0.01).name("Glow Power");
+    folder.add(guiControls, "glowFactor", 0.0, 3.0, 0.01).name("Spread");
+    folder.add(guiControls, "glowPower", 0.01, 10.0, 0.01).name("Intensity");
     folder.add(guiControls, "vNormMultiplier", 0.01, 5.0, 0.01).name("V Norm Multiplier");
+    folder.add(guiControls, "glowTimeFactor", -5.0, 25.0, 0.5).name("Time Factor");
+    folder.add(guiControls, "size", 0.5, 5, 0.01).name("Size");
+    folder.add(guiControls, "bumpScale", -5.0, 100.0, 0.5).name("Corona Size");
+    folder.add(guiControls, "bumpSpeed", 0.01, 20.0, 0.01).name("Corona Speed");
   }
 
   function animate() {
@@ -464,14 +473,15 @@ function init() {
         glowUniforms.glowPower.value = guiControls.glowPower;
         glowUniforms.vNormMultiplier.value = guiControls.vNormMultiplier;
 
+        glowUniforms.bumpScale.value = guiControls.bumpScale;
+        glowUniforms.bumpSpeed.value = guiControls.bumpSpeed;
+
         // Amplitude controls the amount of fuzziness in the border, as well as
         // rotation within the vertex
         sunUniforms.amplitude.value = guiControls.amplitude * Math.sin( timeRadians * 0.125 );
 
 //        guiControls.g = 80 + Math.abs( Math.sin( timeRadians ) ) * 120.0;
 
-        var r = guiControls.r/255, g = guiControls.g/255, b = guiControls.b/255;
-        sunUniforms.color.value.setRGB( r, g, b );
 
         var displacementRadians = guiControls.displacement * Math.PI/180;
 
@@ -486,19 +496,32 @@ function init() {
 
     				sunDisplacement[ i ] += sunNoise[ i ];
 */
-            sunDisplacement[ i ] = Math.sin( displacementRadians * i );
+//            sunDisplacement[ i ] = Math.sin( displacementRadians * i );
 
 
 //            sunNoise[ i ] += 0.02 * ( 0.5 - Math.random() );
 //            sunDisplacement[ i ] += sunNoise[ i ];
-            sunDisplacement[ i ] += guiControls.noise * Math.max( (Math.random() / 2 + 0.5), 0.2);
+//            sunDisplacement[ i ] += guiControls.noise * Math.max( (Math.random() / 2 + 0.5), 0.2);
   			}
 
   			sun.geometry.attributes.displacement.needsUpdate = true;
 
         sun.matrixAutoUpdate = false;
 //        sun.matrix.makeRotationY(rotationRadians);
+
       }
+
+      if(sunGlow != undefined) {
+        sunGlow.scale.set(guiControls.size, guiControls.size, guiControls.size);
+
+        var subVector = new THREE.Vector3().subVectors( camera.position, sunGlow.position );
+//        if(subVector.y < 600) { subVector.y = 600; }
+//        if(subVector.z < 1500) { subVector.z = 1500; }
+
+        glowUniforms.viewVector.value = subVector;
+        glowUniforms.iTime.value += clock.getDelta() * guiControls.glowTimeFactor;
+      }
+
     } // end _sunAnimate()
 
     function _animatePlanet(curTime, planet) {

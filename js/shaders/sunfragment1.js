@@ -10,11 +10,11 @@ varying vec3 vNormal;
 varying vec2 vUv;
 
 // supplied by the program
-uniform vec3 color;
 uniform sampler2D texture;
 uniform sampler2D sphereTexture;
 uniform float iTime;
 uniform float brightnessMultiplier;
+uniform vec2 iResolution;
 
 float getStarGlow(float dist, float brightness) {
 	return min( max( 1.0 - dist * ( 1.0 - brightness ), 0.0 ), 1.0 );
@@ -92,11 +92,28 @@ void main() {
 	// 1. Start with a base brightness for the orange
 	// 2. Add in the star sphere
 	// 3. Add in the star glow
+	vec2 st = gl_FragCoord.xy/iResolution;
+
 	gl_FragColor.rgb = baseBrightness;
 	gl_FragColor.rgb += starSphere * orange;
 	gl_FragColor.rgb += starGlow * orangeRed;
 	gl_FragColor.a = 1.0;
-}
+
+
+//	if(st.x <= 0.3 ) {
+/*
+	if(gl_FragCoord.x <= 200.0) {
+		gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+	}
+	else {
+		gl_FragColor.rgb = baseBrightness;
+		gl_FragColor.rgb += starSphere * orange;
+		gl_FragColor.rgb += starGlow * orangeRed;
+		gl_FragColor.a = 1.0;
+	}
+*/
+
+} // end main()
 `;
 
 /*

@@ -12,8 +12,7 @@ varying vec2 vUv;
 
 void main() {
 
-	vNormal = normal;
-	vNormal = normalize( normalMatrix * normal );
+	vNormal = normalize( normalMatrix * vNormal );
 
 	// this seems to affect the rotation of the texture
 //	vUv = ( 0.5 + amplitude ) * uv + vec2( amplitude );
