@@ -47,7 +47,6 @@ function init() {
   // SCENE
   scene = new THREE.Scene();
   scene.background = new THREE.Color().setHSL( 0.51, 0.4, 0.02 );
-//  scene.background = new THREE.Color().setHSL( 0.75, 0.65, 0.04 );
 
   // RENDERER
   renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true });
@@ -138,8 +137,6 @@ function init() {
   sun = new THREE.Mesh(
           sunGeometry,
           shaderMaterial
-    //    new THREE.MeshPhongMaterial( { emissive: 0xffa100, emissiveIntensity: 0.9, emissiveMap: textureSun, color: 0xa36c00 })
-    //    new THREE.MeshBasicMaterial( { map: textureSun, color: 0xFDFFA7 })
   );
   sun.name = "Sun";
   pointLight.add(sun);
@@ -384,15 +381,6 @@ function init() {
       new THREE.PointsMaterial( { color: 0x7a7a7a, size: 1, sizeAttenuation: false } ),
       new THREE.PointsMaterial( { color: 0x5a5a5a, size: 2, sizeAttenuation: false } ),
       new THREE.PointsMaterial( { color: 0x5a5a5a, size: 1, sizeAttenuation: false } )
-
-/*
-      new THREE.PointsMaterial( { color: 0x555555, size: 2, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0x555555, size: 1, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0x333333, size: 2, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0x3a3a3a, size: 1, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0x1a1a1a, size: 2, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0x1a1a1a, size: 1, sizeAttenuation: false } )
-*/
     ];
     for ( i = 10; i < 30; i ++ ) {
       stars = new THREE.Points( starsGeometry[ i % 2 ], starsMaterials[ i % 6 ] );
@@ -480,9 +468,6 @@ function init() {
         // rotation within the vertex
         sunUniforms.amplitude.value = guiControls.amplitude * Math.sin( timeRadians * 0.125 );
 
-//        guiControls.g = 80 + Math.abs( Math.sin( timeRadians ) ) * 120.0;
-
-
         var displacementRadians = guiControls.displacement * Math.PI/180;
 
         for ( var i = 0; i < sunDisplacement.length; i ++ ) {
@@ -515,8 +500,6 @@ function init() {
         sunGlow.scale.set(guiControls.size, guiControls.size, guiControls.size);
 
         var subVector = new THREE.Vector3().subVectors( camera.position, sunGlow.position );
-//        if(subVector.y < 600) { subVector.y = 600; }
-//        if(subVector.z < 1500) { subVector.z = 1500; }
 
         glowUniforms.viewVector.value = subVector;
         glowUniforms.iTime.value += clock.getDelta() * guiControls.glowTimeFactor;
