@@ -7,6 +7,8 @@ window.SolarLib = window.SolarLib || {};
 
   SolarLib.Planet = Planet;
   SolarLib.PlanetWithRings = PlanetWithRings;
+  SolarLib.Sun = Sun;
+  SolarLib.Stars = Stars;
 
   function Planet(params) {
       this.name         = params.name || "Obj" + Date.now() + (Math.random() * 1000);
@@ -24,22 +26,18 @@ window.SolarLib = window.SolarLib || {};
       this.object       = null;
   }
 
-  Planet.prototype.create = function(targetScene) {
-    if(!targetScene) { return; }
-
+  // Create calls the super.create function, and then adds a ring object to the existing planet object
+  Planet.prototype.create = function() {
+    var planet    = new THREE.Group();
     var mesh      = new THREE.Mesh(
       new THREE.SphereGeometry(this.radius, 32, 32),
       new THREE.MeshLambertMaterial( { map: this.texture, color: this.color })
     );
     mesh.name     = this.name + "Mesh";
-    var planet    = new THREE.Group();
-
 //    mesh.castShadow = false;
 //    mesh.receiveShadow = true;
 
     planet.add(mesh);
-    targetScene.add(planet);
-
     planet.position.set(this.x, this.y, this.z);
 
     this.object = planet;
@@ -52,6 +50,7 @@ window.SolarLib = window.SolarLib || {};
 
     if(this.object != undefined) {
       var orbitSize = this.orbit;
+      var x, y, z;
 
       var planetMesh = this.object.getObjectByName(this.name + "Mesh");
 
@@ -71,9 +70,9 @@ window.SolarLib = window.SolarLib || {};
         rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), rotationRadians);
       }
 
-      var x = (Math.sin(xRadians) * orbitSize);
-      var y = 0;
-      var z = (Math.sin(zRadians) * orbitSize);
+      x = (Math.sin(xRadians) * orbitSize);
+      y = 0;
+      z = (Math.sin(zRadians) * orbitSize);
 
       this.object.matrixAutoUpdate = false;
       this.object.matrix.makeTranslation( x, y, z );
@@ -97,15 +96,15 @@ window.SolarLib = window.SolarLib || {};
   PlanetWithRings.prototype = Object.create( Planet.prototype );
   PlanetWithRings.prototype.constructor = PlanetWithRings;
 
-  PlanetWithRings.prototype.create = function(targetScene) {
-    if(!targetScene) { return; }
-
+  // Create calls the super.create function, and then adds a ring object to the existing planet object
+  PlanetWithRings.prototype.create = function() {
     Planet.prototype.create.call(this, targetScene);
 
     var phiSegments = 64;
     var thetaSegments = 64;
     var innerRadius = this.radius + this.ringDistance;
     var outerRadius = this.radius + this.ringDistance + this.ringSize;
+    var rotationRadians, rotation;
 
     var geometry = new THREE.RingGeometryV2(innerRadius, outerRadius, thetaSegments, phiSegments);
 
@@ -118,8 +117,8 @@ window.SolarLib = window.SolarLib || {};
     ringMesh.name     = this.name + "RingMesh";
 
     // rotate the ring over to the proper angle
-    var rotationRadians = this.ringAngle * Math.PI/180;
-    var rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), rotationRadians);
+    rotationRadians = this.ringAngle * Math.PI/180;
+    rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), rotationRadians);
     ringMesh.matrixAutoUpdate = false;
     ringMesh.applyMatrix(rotation);
 
@@ -130,5 +129,38 @@ window.SolarLib = window.SolarLib || {};
 
     return this.object;
   } // end PlanetWithRings.update
+
+
+  function Sun(params) {
+
+  } // end Sun
+  Sun.prototype.create = function() {
+
+  } // end Sun.create
+  Sun.prototype.update = function() {
+
+  } // end Sun.update
+
+
+  function Stars(params) {
+
+  } // end Stars
+  Stars.prototype.create = function() {
+
+  } // end Stars.create
+
+
+  function Orbit(params) {
+
+  } // end Orbit
+  Orbit.prototype.create = function() {
+
+  } // end Orbit.create
+  Orbit.prototype.draw = function() {
+
+  } // end Orbit.draw
+  Orbit.prototype.update = function() {
+
+  } // end Orbit.update
 
 })(SolarLib, THREE);

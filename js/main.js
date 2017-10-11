@@ -9,18 +9,18 @@
 window.addEventListener("load", init, false);
 
 var scene, camera, renderer, controls; // global vars needed throughout the program
-var cube, sphere;
-var sun, sunGlow, earth;
-var planets = new Map();
-//var planets = [];
-var orbits = new Map();
+
 var width = window.innerWidth;
 var height = window.innerHeight;
 var aspectRatio = width / height;
 
+var sun, sunGlow;
+var planets = new Map();
+var orbits = new Map();
+
 var clock;
 var sunUniforms, glowUniforms, sunDisplacement, sunNoise;
-var guiControls;
+var sunControls, glowControls;
 
 function init() {
   clock = new THREE.Clock();
@@ -269,7 +269,8 @@ function init() {
   }));
 
   planets.forEach( (planet, key, map) => {
-    planet.create(scene);
+    var curObject = planet.create(scene);
+    scene.add(curObject);
   });
 
   createStars();
@@ -351,13 +352,14 @@ function init() {
 
   function setupGui() {
     // initialize the guiControls
-    guiControls = {
+    sunControls = {
       amplitude: 8.0,
       displacement: 0,
       noise: 1.0,
       timeFactor: -0.15,
       brightness: 8.0,
-
+    }
+    glowControls = {
       glowFactor: 0.28,
       glowPower: 7.33,
       glowTimeFactor: 1.5,
@@ -370,21 +372,21 @@ function init() {
     var gui = new dat.GUI();
     var folder = gui.addFolder("Sun Controls");
 
-    folder.add(guiControls, "amplitude", 0.0, 100.0, 0.1).name("Amplitude").listen();
-    folder.add(guiControls, "displacement", 0.0, 360.0, 1.0).name("Displacement").listen();
-    folder.add(guiControls, "noise", -15.0, 15.0, 0.1).name("Noise").listen();
-    folder.add(guiControls, "timeFactor", -5.0, 5.0, 0.05).name("Rotation");
-    folder.add(guiControls, "brightness", -20.0, 20.0, 0.1).name("Brightness");
+    folder.add(sunControls, "amplitude", 0.0, 100.0, 0.1).name("Amplitude").listen();
+    folder.add(sunControls, "displacement", 0.0, 360.0, 1.0).name("Displacement").listen();
+    folder.add(sunControls, "noise", -15.0, 15.0, 0.1).name("Noise").listen();
+    folder.add(sunControls, "timeFactor", -5.0, 5.0, 0.05).name("Rotation");
+    folder.add(sunControls, "brightness", -20.0, 20.0, 0.1).name("Brightness");
 
     var folder = gui.addFolder("Sun Glow Controls");
 
-    folder.add(guiControls, "glowFactor", 0.0, 3.0, 0.01).name("Spread");
-    folder.add(guiControls, "glowPower", 0.01, 10.0, 0.01).name("Intensity");
-    folder.add(guiControls, "vNormMultiplier", 0.01, 5.0, 0.01).name("V Norm Multiplier");
-    folder.add(guiControls, "glowTimeFactor", -5.0, 25.0, 0.5).name("Time Factor");
-    folder.add(guiControls, "size", 0.5, 5, 0.01).name("Size");
-    folder.add(guiControls, "bumpScale", -5.0, 100.0, 0.5).name("Corona Size");
-    folder.add(guiControls, "bumpSpeed", 0.01, 20.0, 0.01).name("Corona Speed");
+    folder.add(glowControls, "glowFactor", 0.0, 3.0, 0.01).name("Spread");
+    folder.add(glowControls, "glowPower", 0.01, 10.0, 0.01).name("Intensity");
+    folder.add(glowControls, "vNormMultiplier", 0.01, 5.0, 0.01).name("V Norm Multiplier");
+    folder.add(glowControls, "glowTimeFactor", -5.0, 25.0, 0.5).name("Time Factor");
+    folder.add(glowControls, "size", 0.5, 5, 0.01).name("Size");
+    folder.add(glowControls, "bumpScale", -5.0, 100.0, 0.5).name("Corona Size");
+    folder.add(glowControls, "bumpSpeed", 0.01, 20.0, 0.01).name("Corona Speed");
   }
 
   function animate() {
@@ -409,21 +411,21 @@ function init() {
         var rotationRadians = curTime * Math.PI/180;
         var timeRadians = curTime*5 * Math.PI/180
 
-        sunUniforms.iTime.value += clock.getDelta() * guiControls.timeFactor;
-        sunUniforms.brightnessMultiplier.value = guiControls.brightness;
+        sunUniforms.iTime.value += clock.getDelta() * sunControls.timeFactor;
+        sunUniforms.brightnessMultiplier.value = sunControls.brightness;
 
-        glowUniforms.glowFactor.value = guiControls.glowFactor;
-        glowUniforms.glowPower.value = guiControls.glowPower;
-        glowUniforms.vNormMultiplier.value = guiControls.vNormMultiplier;
+        glowUniforms.glowFactor.value = glowControls.glowFactor;
+        glowUniforms.glowPower.value = glowControls.glowPower;
+        glowUniforms.vNormMultiplier.value = glowControls.vNormMultiplier;
 
-        glowUniforms.bumpScale.value = guiControls.bumpScale;
-        glowUniforms.bumpSpeed.value = guiControls.bumpSpeed;
+        glowUniforms.bumpScale.value = glowControls.bumpScale;
+        glowUniforms.bumpSpeed.value = glowControls.bumpSpeed;
 
         // Amplitude controls the amount of fuzziness in the border, as well as
         // rotation within the vertex
-        sunUniforms.amplitude.value = guiControls.amplitude * Math.sin( timeRadians * 0.125 );
+        sunUniforms.amplitude.value = sunControls.amplitude * Math.sin( timeRadians * 0.125 );
 
-        var displacementRadians = guiControls.displacement * Math.PI/180;
+        var displacementRadians = sunControls.displacement * Math.PI/180;
 
         for ( var i = 0; i < sunDisplacement.length; i ++ ) {
 
@@ -452,12 +454,12 @@ function init() {
       }
 
       if(sunGlow != undefined) {
-        sunGlow.scale.set(guiControls.size, guiControls.size, guiControls.size);
+        sunGlow.scale.set(glowControls.size, glowControls.size, glowControls.size);
 
         var subVector = new THREE.Vector3().subVectors( camera.position, sunGlow.position );
 
         glowUniforms.viewVector.value = subVector;
-        glowUniforms.iTime.value += clock.getDelta() * guiControls.glowTimeFactor;
+        glowUniforms.iTime.value += clock.getDelta() * glowControls.glowTimeFactor;
       }
 
     } // end _sunAnimate()

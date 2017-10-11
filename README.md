@@ -4,7 +4,7 @@ A Basic Solar System Simulation
 TODOS:
 - MOBILE: Adjust size of the dat.gui menu so the font is larger on mobile
 - Refactor:
-  - Put the Sun and Planets into their own classes
+  - Put the Sun in its own object
   - Two methods:
     - create - called on instantiation
     - update - called in the animate function
