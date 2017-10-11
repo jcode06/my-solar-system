@@ -1,4 +1,139 @@
-( (THREE, dat, exports) => {
+
+// Dependencies:
+// - THREE (Three.js)
+// - THREE.RingGeometryV2.js - custom ring geometry to get texture right
+var SolarLib = SolarLib || {};
+( (SolarLib, THREE) => {
+  SolarLib.Planet = Planet;
+  SolarLib.PlanetWithRings = PlanetWithRings;
+
+  function Planet(params) {
+      this.name         = params.name || "Obj" + Date.now() + (Math.random() * 1000);
+      this.texture      = params.texture || "";
+      this.orbit        = !Number.isNaN(params.orbit) ? params.orbit : 0;
+      this.speed        = !Number.isNaN(params.speed) ? params.speed : 0;
+      this.radius       = !Number.isNaN(params.radius) ? params.radius : 0;
+      this.color        = params.color || 0xffffff;
+      this.rotateSpeed  = !Number.isNaN(params.rotateSpeed) ? params.rotateSpeed : 0;
+      this.rotateDir    = (["Up", "Clockwise", "CounterClockwise"]).includes(params.rotateDir) ?
+        params.rotateDir : "CounterClockwise";
+      this.x            = !Number.isNaN(params.x) ? params.x : 0;
+      this.y            = !Number.isNaN(params.y) ? params.y : 0;
+      this.z            = !Number.isNaN(params.z) ? params.z : 0;
+      this.object       = null;
+  }
+
+  Planet.prototype.create = function(targetScene) {
+    if(!targetScene) { return; }
+
+    var mesh      = new THREE.Mesh(
+      new THREE.SphereGeometry(this.radius, 32, 32),
+      new THREE.MeshLambertMaterial( { map: this.texture, color: this.color })
+    );
+    mesh.name     = this.name + "Mesh";
+    var planet    = new THREE.Group();
+
+//    mesh.castShadow = false;
+//    mesh.receiveShadow = true;
+
+    planet.add(mesh);
+    targetScene.add(planet);
+
+    planet.position.set(this.x, this.y, this.z);
+
+    this.object = planet;
+
+    return this.object;
+  } // end Planet.create
+
+  Planet.prototype.update = function(targetScene, curTime) {
+    if(!targetScene) { return; }
+
+    if(this.object != undefined) {
+      var orbitSize = this.orbit;
+
+      var planetMesh = this.object.getObjectByName(this.name + "Mesh");
+
+      var rotationRadians = this.rotateSpeed * Math.PI/180;
+      var xRadians = curTime/this.speed * Math.PI/180;
+      var zRadians = (curTime/this.speed + 90) * Math.PI/180;
+
+      // rotation needs to be fixed, it's a little off
+      var rotation;
+      if(this.rotationDir == "Up") {
+        rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), rotationRadians);
+      }
+      else if(this.rotationDir == "Clockwise") {
+        rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), -rotationRadians);
+      }
+      else {
+        rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), rotationRadians);
+      }
+
+      var x = (Math.sin(xRadians) * orbitSize);
+      var y = 0;
+      var z = (Math.sin(zRadians) * orbitSize);
+
+      this.object.matrixAutoUpdate = false;
+      this.object.matrix.makeTranslation( x, y, z );
+
+      if(planetMesh != undefined) {
+        planetMesh.matrixAutoUpdate = false;
+        planetMesh.applyMatrix(rotation);
+      }
+    }
+  } // end Planet.update
+
+  function PlanetWithRings(params) {
+    Planet.call(this, params);
+
+    this.ringsTexture = params.ringsTexture || "";
+    this.ringAngle    = !Number.isInteger(params.ringAngle) ? params.ringAngle : 90;
+    this.ringDistance = !Number.isNaN(params.ringDistance) ? params.ringDistance : 50;
+    this.ringSize     = !Number.isNaN(params.ringSize) ? params.ringSize : 50;
+  } // end PlanetWithRings
+
+  PlanetWithRings.prototype = Object.create( Planet.prototype );
+  PlanetWithRings.prototype.constructor = PlanetWithRings;
+
+  PlanetWithRings.prototype.create = function(targetScene) {
+    if(!targetScene) { return; }
+
+    Planet.prototype.create.call(this, targetScene);
+
+    var phiSegments = 64;
+    var thetaSegments = 64;
+    var innerRadius = this.radius + this.ringDistance;
+    var outerRadius = this.radius + this.ringDistance + this.ringSize;
+
+    var geometry = new THREE.RingGeometryV2(innerRadius, outerRadius, thetaSegments, phiSegments);
+
+    // add rings here
+    var ringMesh  = new THREE.Mesh(
+      geometry,
+      new THREE.MeshLambertMaterial( { map: this.ringsTexture, color: this.color, side: THREE.DoubleSide })
+//      new THREE.MeshBasicMaterial( { map: this.ringsTexture, color: this.color, side: THREE.DoubleSide })
+    );
+    ringMesh.name     = this.name + "RingMesh";
+
+    // rotate the ring over to the proper angle
+    var rotationRadians = this.ringAngle * Math.PI/180;
+    var rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), rotationRadians);
+    ringMesh.matrixAutoUpdate = false;
+    ringMesh.applyMatrix(rotation);
+
+//    ringMesh.castShadow = true;
+//    ringMesh.receiveShadow = true;
+
+    this.object.add(ringMesh);
+
+    return this.object;
+  } // end PlanetWithRings.update
+
+})(SolarLib, THREE);
+
+
+( (SolarLib, THREE, dat, exports) => {
   "use strict";
 
 // textures courtesy of James Hastings-Trew via website links below
@@ -12,6 +147,7 @@ var scene, camera, renderer, controls; // global vars needed throughout the prog
 var cube, sphere;
 var sun, sunGlow, earth;
 var planets = new Map();
+//var planets = [];
 var orbits = new Map();
 var width = window.innerWidth;
 var height = window.innerHeight;
@@ -183,47 +319,55 @@ function init() {
   drawOrbit(orbits.get("Neptune"), lineSegments);
   drawOrbit(orbits.get("Pluto"), lineSegments);
 
-  createPlanet({
+  planets.set("Mercury", new SolarLib.Planet({
     name: "Mercury", texture: textureMercury,
     orbit: orbits.get("Mercury"), speed: earthSpeed * .4,
     radius: earthSize * .38, rotateSpeed: earthRotateSpeed * 0.1,
     color: 0xffffff,
     x: 0, y:0, z:0
-  });
+  }));
 
-  createPlanet({
+  planets.set("Venus", new SolarLib.Planet({
     name: "Venus", texture: textureVenus,
     orbit: orbits.get("Venus"), speed: earthSpeed * .6,
     radius: earthSize * .95,
     color: 0xffffff, rotateSpeed: earthRotateSpeed * 0.2,
     x: 0, y:0, z:0
-  });
+  }));
 
-  createPlanet({
+  planets.set("Venus", new SolarLib.Planet({
+    name: "Venus", texture: textureVenus,
+    orbit: orbits.get("Venus"), speed: earthSpeed * .6,
+    radius: earthSize * .95,
+    color: 0xffffff, rotateSpeed: earthRotateSpeed * 0.2,
+    x: 0, y:0, z:0
+  }));
+
+  planets.set("Earth", new SolarLib.Planet({
     name: "Earth", texture: textureEarth,
     orbit: orbits.get("Earth"), speed: earthSpeed,
     radius: earthSize, rotateSpeed: earthRotateSpeed,
     color: 0x2194ce,
     x: 0, y:0, z:0
-  });
+  }));
 
-  createPlanet({
+  planets.set("Mars", new SolarLib.Planet({
     name: "Mars", texture: textureMars,
     orbit: orbits.get("Mars"), speed: earthSpeed * 1.2,
     radius: earthSize * .53, rotateSpeed: earthRotateSpeed * 0.975,
     color: 0xffffff,
     x: 0, y:0, z:0
-  });
+  }));
 
-  createPlanet({
+  planets.set("Jupiter", new SolarLib.Planet({
     name: "Jupiter", texture: textureJupiter,
     orbit: orbits.get("Jupiter"), speed: earthSpeed * 1.4,
     radius: earthSize * 11.20,
     color: 0xffffff, rotateSpeed: earthRotateSpeed * 2.43,
     x: 0, y:0, z:0
-  });
+  }));
 
-  createPlanetWithRings({
+  planets.set("Saturn", new SolarLib.PlanetWithRings({
     name: "Saturn", texture: textureSaturn,
     ringsTexture: textureSaturnRings, ringAngle: 90,
     ringDistance: earthSize * 2.0, ringSize: earthSize * 6.00,
@@ -231,9 +375,9 @@ function init() {
     radius: earthSize * 9.45, rotateSpeed: earthRotateSpeed * 2.35,
     color: 0xffffff,
     x: 0, y:0, z:0
-  });
+  }) );
 
-  createPlanetWithRings({
+  planets.set("Uranus", new SolarLib.PlanetWithRings({
     name: "Uranus", texture: textureUranus,
     ringsTexture: textureUranusRings, ringAngle: 0,
     ringDistance: earthSize * 1.5, ringSize: earthSize * 2.00,
@@ -241,22 +385,26 @@ function init() {
     radius: earthSize * 4.00, rotateSpeed: earthRotateSpeed * 1.34,
     color: 0xffffff,
     x: 0, y:0, z:0
-  });
+  }) );
 
-  createPlanet({
+  planets.set("Neptune", new SolarLib.Planet({
     name: "Neptune", texture: textureNeptune,
     orbit: orbits.get("Neptune"), speed: earthSpeed * 2.5,
     radius: earthSize * 3.88, rotateSpeed: earthRotateSpeed * 1.25,
     color: 0xffffff,
     x: 0, y:0, z:0
-  });
+  }));
 
-  createPlanet({
+  planets.set("Pluto", new SolarLib.Planet({
     name: "Pluto", texture: texturePluto,
     orbit: orbits.get("Pluto"), speed: earthSpeed * 3.0,
     radius: earthSize * 0.19, rotateSpeed: earthRotateSpeed * 0.3,
     color: 0xffffff,
     x: 0, y:0, z:0
+  }));
+
+  planets.forEach( (planet, key, map) => {
+    planet.create(scene);
   });
 
   createStars();
@@ -292,65 +440,6 @@ function init() {
     }
 
     scene.add( new THREE.Line(geometry, material) );
-  }
-
-  // creates geometry for the planet, and adds it to the list of planets
-  function createPlanet(params) {
-    var geometry  = new THREE.SphereGeometry(params.radius, 32, 32);
-    var material  = new THREE.MeshLambertMaterial( { map: params.texture, color: params.color });
-    var mesh      = new THREE.Mesh( geometry, material );
-    mesh.name     = params.name + "Mesh";
-    var planet    = new THREE.Group();
-
-//    mesh.castShadow = false;
-//    mesh.receiveShadow = true;
-
-    planet.add(mesh);
-    scene.add(planet);
-
-    // set planet properties
-    for(let key in params) {
-      if( ["name", "orbit", "speed", "rotateSpeed",
-        "ringAngle", "ringDistance", "ringSize"].includes(key) ) {
-        planet[key] = params[key];
-      }
-    }
-    planet.position.set(params.x, params.y, params.z);
-
-    planets.set(params.name, planet);
-
-    return planet;
-  }
-
-  function createPlanetWithRings(params) {
-    var planet = createPlanet(params);
-
-    var phiSegments = 64;
-    var thetaSegments = 64;
-    var innerRadius = params.radius + params.ringDistance;
-    var outerRadius = params.radius + params.ringDistance + params.ringSize;
-
-    var geometry = new THREE.RingGeometryV2(innerRadius, outerRadius, thetaSegments, phiSegments);
-
-    // add rings here
-    var newMesh  = new THREE.Mesh(
-      geometry,
-      new THREE.MeshLambertMaterial( { map: params.ringsTexture, color: params.color, side: THREE.DoubleSide })
-//      new THREE.MeshBasicMaterial( { map: params.ringsTexture, color: params.color, side: THREE.DoubleSide })
-    );
-
-    // rotate the ring over
-    var rotationRadians = planet.ringAngle * Math.PI/180;
-    var rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), rotationRadians);
-    newMesh.matrixAutoUpdate = false;
-    newMesh.applyMatrix(rotation);
-
-//    newMesh.castShadow = true;
-//    newMesh.receiveShadow = true;
-
-    planet.add(newMesh);
-
-    return planet;
   }
 
   function createStars() {
@@ -442,8 +531,8 @@ function init() {
 
     _animateSun(time);
 
-    planets.forEach( (value, key, map) => {
-      _animatePlanet(time, value);
+    planets.forEach( (planet, key, map) => {
+      planet.update(scene, time);
     });
 
     renderer.render( scene, camera );
@@ -508,45 +597,6 @@ function init() {
 
     } // end _sunAnimate()
 
-    function _animatePlanet(curTime, planet) {
-      if(planet != undefined) {
-        var orbitSize = planet.orbit;
-
-        var planetMesh = planet.getObjectByName(planet.name + "Mesh");
-
-        var rotationRadians = planet.rotateSpeed * Math.PI/180;
-        var xRadians = curTime/planet.speed * Math.PI/180;
-        var zRadians = (curTime/planet.speed + 90) * Math.PI/180;
-
-        // rotation needs to be fixed, it's a little off
-        var rotation;
-        if(planet.name == "Uranus") {
-          rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), rotationRadians);
-        }
-        else if(planet.name == "Venus") {
-          rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), -rotationRadians);
-        }
-        else {
-          rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), rotationRadians);
-        }
-
-//orbitSize /= 10;
-//xRadians = 1;
-//zRadians = 1;
-
-        var x = (Math.sin(xRadians) * orbitSize);
-        var y = 0;
-        var z = (Math.sin(zRadians) * orbitSize);
-
-        planet.matrixAutoUpdate = false;
-        planet.matrix.makeTranslation( x, y, z );
-
-        if(planetMesh != undefined) {
-          planetMesh.matrixAutoUpdate = false;
-          planetMesh.applyMatrix(rotation);
-        }
-      }
-    } // end _animatePlanet()
   } // end animate()
 
 
@@ -566,4 +616,4 @@ function init() {
 
 
 
-} )(THREE, dat, window.exports);
+} )(SolarLib, THREE, dat, window.exports);
