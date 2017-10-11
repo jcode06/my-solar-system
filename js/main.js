@@ -95,7 +95,8 @@ function init() {
     iTime: { value: 0.1 },
     bumpTexture: { value: textureSun2 },
     bumpScale: { value: 40.0 },
-    bumpSpeed: { value: 1.5 }
+    bumpSpeed: { value: 1.5 },
+    iResolution: { value: new THREE.Vector2(width, height) }
   }
 
   var glowMaterial = new THREE.ShaderMaterial({
@@ -553,6 +554,9 @@ function init() {
 
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+
+    glowUniforms.iResolution.value = new THREE.Vector2(width, height);
+    sunUniforms.iResolution.value = new THREE.Vector2(width, height);
 
     renderer.setSize( window.innerWidth, window.innerHeight );
 

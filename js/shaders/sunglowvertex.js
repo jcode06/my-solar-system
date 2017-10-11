@@ -15,6 +15,7 @@ void main()
 {
     vec2 vUv = uv;
 
+    // uses the normal, normalMatrix, and viewVector for intensity value used in Fragment shader
     vec3 vNormal = normalize( normalMatrix * normal );
     vec3 vNormal2 = normalize( normalMatrix * viewVector );
     intensity = pow( glowFactor - dot(vNormal, vNormal2), glowPower );
