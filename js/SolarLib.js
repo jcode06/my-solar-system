@@ -45,9 +45,7 @@ window.SolarLib = window.SolarLib || {};
     return this.object;
   } // end Planet.create
 
-  Planet.prototype.update = function(targetScene, curTime) {
-    if(!targetScene) { return; }
-
+  Planet.prototype.update = function(curTime) {
     if(this.object != undefined) {
       var orbitSize = this.orbit;
       var x, y, z;
@@ -98,7 +96,7 @@ window.SolarLib = window.SolarLib || {};
 
   // Create calls the super.create function, and then adds a ring object to the existing planet object
   PlanetWithRings.prototype.create = function() {
-    Planet.prototype.create.call(this, targetScene);
+    Planet.prototype.create.call(this);
 
     var phiSegments = 64;
     var thetaSegments = 64;
@@ -142,11 +140,65 @@ window.SolarLib = window.SolarLib || {};
   } // end Sun.update
 
 
-  function Stars(params) {
+  function Stars(params = {}) {
+    this.brightStars          = !isNaN(params.brightStars) ? params.brightStars : 50;
+    this.normalStars          = !isNaN(params.normalStars) ? params.normalStars : 375;
+    this.spreadMultiplier   = !isNaN(params.spreadMultiplier) ? params.spreadMultiplier : 2000;
 
+    params.colors = params.colors || [];
+    this.colors = [];
+    this.colors[0] = params.colors[0] || 0xdddddd;
+    this.colors[1] = params.colors[1] || 0xdddddd;
+    this.colors[2] = params.colors[2] || 0xaaaaaa;
+    this.colors[3] = params.colors[3] || 0x7a7a7a;
+    this.colors[4] = params.colors[4] || 0x5a5a5a;
+    this.colors[5] = params.colors[5] || 0x5a5a5a;
+
+    this.stars = [];
   } // end Stars
-  Stars.prototype.create = function() {
 
+  Stars.prototype.create = function(targetScene) {
+    var i, starsGeometry = [ new THREE.Geometry(), new THREE.Geometry() ];
+    for ( i = 0; i < this.brightStars; i ++ ) {
+      var vertex = new THREE.Vector3();
+      vertex.x = Math.random() * 2 - 1;
+      vertex.y = Math.random() * 2 - 1;
+      vertex.z = Math.random() * 2 - 1;
+      vertex.multiplyScalar( this.spreadMultiplier );
+      starsGeometry[ 0 ].vertices.push( vertex );
+    }
+    for ( i = 0; i < this.normalStars; i ++ ) {
+      var vertex = new THREE.Vector3();
+      vertex.x = Math.random() * 2 - 1;
+      vertex.y = Math.random() * 2 - 1;
+      vertex.z = Math.random() * 2 - 1;
+      vertex.multiplyScalar( this.spreadMultiplier );
+      starsGeometry[ 1 ].vertices.push( vertex );
+    }
+    var stars;
+    var starsMaterials = [
+      new THREE.PointsMaterial( { color: this.colors[0], size: 2, sizeAttenuation: false } ),
+      new THREE.PointsMaterial( { color: this.colors[1], size: 1, sizeAttenuation: false } ),
+      new THREE.PointsMaterial( { color: this.colors[2], size: 2, sizeAttenuation: false } ),
+      new THREE.PointsMaterial( { color: this.colors[3], size: 1, sizeAttenuation: false } ),
+      new THREE.PointsMaterial( { color: this.colors[4], size: 2, sizeAttenuation: false } ),
+      new THREE.PointsMaterial( { color: this.colors[5], size: 1, sizeAttenuation: false } )
+    ];
+
+    for ( i = 10; i < 30; i ++ ) {
+      stars = new THREE.Points( starsGeometry[ i % 2 ], starsMaterials[ i % 6 ] );
+      stars.rotation.x = Math.random() * 6;
+      stars.rotation.y = Math.random() * 6;
+      stars.rotation.z = Math.random() * 6;
+      stars.scale.setScalar( i * 10 );
+      stars.matrixAutoUpdate = false;
+      stars.updateMatrix();
+
+      this.stars.push(stars);
+//      targetScene.add( stars );
+    }
+
+    return this.stars;
   } // end Stars.create
 
 

@@ -184,6 +184,7 @@ function init() {
   drawOrbit(orbits.get("Neptune"), lineSegments);
   drawOrbit(orbits.get("Pluto"), lineSegments);
 
+  // Planet creation
   planets.set("Mercury", new SolarLib.Planet({
     name: "Mercury", texture: textureMercury,
     orbit: orbits.get("Mercury"), speed: earthSpeed * .4,
@@ -268,12 +269,18 @@ function init() {
     x: 0, y:0, z:0
   }));
 
+  // Create Planets
   planets.forEach( (planet, key, map) => {
     var curObject = planet.create(scene);
     scene.add(curObject);
   });
 
-  createStars();
+  // Create Stars
+  var StarsObj = new SolarLib.Stars({ spreadMultiplier: 2000 });
+  var stars = StarsObj.create();
+  for(let starInst of stars) {
+    scene.add(starInst);
+  }
 
 /*
   // Fly Controls, currently not working
@@ -306,48 +313,6 @@ function init() {
     }
 
     scene.add( new THREE.Line(geometry, material) );
-  }
-
-  function createStars() {
-    var stars1 = 50; // 250
-    var stars2 = 375; // 1500
-
-    var i, r = 2000, starsGeometry = [ new THREE.Geometry(), new THREE.Geometry() ];
-    for ( i = 0; i < stars1; i ++ ) {
-      var vertex = new THREE.Vector3();
-      vertex.x = Math.random() * 2 - 1;
-      vertex.y = Math.random() * 2 - 1;
-      vertex.z = Math.random() * 2 - 1;
-      vertex.multiplyScalar( r );
-      starsGeometry[ 0 ].vertices.push( vertex );
-    }
-    for ( i = 0; i < stars2; i ++ ) {
-      var vertex = new THREE.Vector3();
-      vertex.x = Math.random() * 2 - 1;
-      vertex.y = Math.random() * 2 - 1;
-      vertex.z = Math.random() * 2 - 1;
-      vertex.multiplyScalar( r );
-      starsGeometry[ 1 ].vertices.push( vertex );
-    }
-    var stars;
-    var starsMaterials = [
-      new THREE.PointsMaterial( { color: 0xdddddd, size: 2, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0xdddddd, size: 1, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0xaaaaaa, size: 2, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0x7a7a7a, size: 1, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0x5a5a5a, size: 2, sizeAttenuation: false } ),
-      new THREE.PointsMaterial( { color: 0x5a5a5a, size: 1, sizeAttenuation: false } )
-    ];
-    for ( i = 10; i < 30; i ++ ) {
-      stars = new THREE.Points( starsGeometry[ i % 2 ], starsMaterials[ i % 6 ] );
-      stars.rotation.x = Math.random() * 6;
-      stars.rotation.y = Math.random() * 6;
-      stars.rotation.z = Math.random() * 6;
-      stars.scale.setScalar( i * 10 );
-      stars.matrixAutoUpdate = false;
-      stars.updateMatrix();
-      scene.add( stars );
-    }
   }
 
   function setupGui() {
