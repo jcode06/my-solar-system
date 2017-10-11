@@ -149,45 +149,27 @@ function init() {
   pointLight.add(sunGlow);
 
   // create orbit sizes
-  orbits.set("Mercury", earthOrbit * .57);
-  orbits.set("Venus", earthOrbit * .72);
-  orbits.set("Earth", earthOrbit);
-  orbits.set("Mars", earthOrbit * 1.52);
+  orbits.set("Mercury", new SolarLib.Orbit({ name: "Mercury", orbitSize: earthOrbit * .57 }) );
+  orbits.set("Venus", new SolarLib.Orbit({ name: "Venus", orbitSize: earthOrbit * .72 }) );
+  orbits.set("Earth", new SolarLib.Orbit({ name: "Earth", orbitSize: earthOrbit  }) );
+  orbits.set("Mars", new SolarLib.Orbit({ name: "Mars", orbitSize: earthOrbit * 1.52 }) );
 
   // Farther orbits shorter to bring the planets a bit closer together
-  orbits.set("Jupiter", earthOrbit * 3.5);
-  orbits.set("Saturn", earthOrbit * 6.5);
-  orbits.set("Uranus", earthOrbit * 13.0);
-  orbits.set("Neptune", earthOrbit * 20.0);
-  orbits.set("Pluto", earthOrbit * 25.0);
+  orbits.set("Jupiter", new SolarLib.Orbit({ name: "Jupiter", orbitSize: earthOrbit * 3.5 }) );
+  orbits.set("Saturn", new SolarLib.Orbit({ name: "Saturn", orbitSize: earthOrbit * 6.5 }) );
+  orbits.set("Uranus", new SolarLib.Orbit({ name: "Uranus", orbitSize: earthOrbit * 13.0 }) );
+  orbits.set("Neptune", new SolarLib.Orbit({ name: "Neptune", orbitSize: earthOrbit * 20.0 }) );
+  orbits.set("Pluto", new SolarLib.Orbit({ name: "Pluto", orbitSize: earthOrbit * 25.0 }) );
 
-/*
-  orbits.set("Mercury", earthOrbit * .38);
-  orbits.set("Venus", earthOrbit * .72);
-  orbits.set("Earth", earthOrbit);
-  orbits.set("Mars", earthOrbit * 1.52);
-
-  orbits.set("Jupiter", earthOrbit * 5.20);
-  orbits.set("Saturn", earthOrbit * 9.53);
-  orbits.set("Uranus", earthOrbit * 19.18);
-  orbits.set("Neptune", earthOrbit * 30.04);
-  orbits.set("Pluto", earthOrbit * 39.51);
-*/
-
-  drawOrbit(orbits.get("Mercury"), lineSegments);
-  drawOrbit(orbits.get("Venus"), lineSegments);
-  drawOrbit(orbits.get("Earth"), lineSegments);
-  drawOrbit(orbits.get("Mars"), lineSegments);
-  drawOrbit(orbits.get("Jupiter"), lineSegments);
-  drawOrbit(orbits.get("Saturn"), lineSegments);
-  drawOrbit(orbits.get("Uranus"), lineSegments);
-  drawOrbit(orbits.get("Neptune"), lineSegments);
-  drawOrbit(orbits.get("Pluto"), lineSegments);
+  orbits.forEach( (orbit, key, map) => {
+    var curObject = orbit.draw();
+    scene.add(curObject);
+  });
 
   // Planet creation
   planets.set("Mercury", new SolarLib.Planet({
     name: "Mercury", texture: textureMercury,
-    orbit: orbits.get("Mercury"), speed: earthSpeed * .4,
+    orbit: orbits.get("Mercury").orbitSize, speed: earthSpeed * .4,
     radius: earthSize * .38, rotateSpeed: earthRotateSpeed * 0.1,
     color: 0xffffff,
     x: 0, y:0, z:0
@@ -195,15 +177,7 @@ function init() {
 
   planets.set("Venus", new SolarLib.Planet({
     name: "Venus", texture: textureVenus,
-    orbit: orbits.get("Venus"), speed: earthSpeed * .6,
-    radius: earthSize * .95,
-    color: 0xffffff, rotateSpeed: earthRotateSpeed * 0.2,
-    x: 0, y:0, z:0
-  }));
-
-  planets.set("Venus", new SolarLib.Planet({
-    name: "Venus", texture: textureVenus,
-    orbit: orbits.get("Venus"), speed: earthSpeed * .6,
+    orbit: orbits.get("Venus").orbitSize, speed: earthSpeed * .6,
     radius: earthSize * .95,
     color: 0xffffff, rotateSpeed: earthRotateSpeed * 0.2,
     x: 0, y:0, z:0
@@ -211,7 +185,7 @@ function init() {
 
   planets.set("Earth", new SolarLib.Planet({
     name: "Earth", texture: textureEarth,
-    orbit: orbits.get("Earth"), speed: earthSpeed,
+    orbit: orbits.get("Earth").orbitSize, speed: earthSpeed,
     radius: earthSize, rotateSpeed: earthRotateSpeed,
     color: 0x2194ce,
     x: 0, y:0, z:0
@@ -219,7 +193,7 @@ function init() {
 
   planets.set("Mars", new SolarLib.Planet({
     name: "Mars", texture: textureMars,
-    orbit: orbits.get("Mars"), speed: earthSpeed * 1.2,
+    orbit: orbits.get("Mars").orbitSize, speed: earthSpeed * 1.2,
     radius: earthSize * .53, rotateSpeed: earthRotateSpeed * 0.975,
     color: 0xffffff,
     x: 0, y:0, z:0
@@ -227,7 +201,7 @@ function init() {
 
   planets.set("Jupiter", new SolarLib.Planet({
     name: "Jupiter", texture: textureJupiter,
-    orbit: orbits.get("Jupiter"), speed: earthSpeed * 1.4,
+    orbit: orbits.get("Jupiter").orbitSize, speed: earthSpeed * 1.4,
     radius: earthSize * 11.20,
     color: 0xffffff, rotateSpeed: earthRotateSpeed * 2.43,
     x: 0, y:0, z:0
@@ -237,7 +211,7 @@ function init() {
     name: "Saturn", texture: textureSaturn,
     ringsTexture: textureSaturnRings, ringAngle: 90,
     ringDistance: earthSize * 2.0, ringSize: earthSize * 6.00,
-    orbit: orbits.get("Saturn"), speed: earthSpeed * 1.5,
+    orbit: orbits.get("Saturn").orbitSize, speed: earthSpeed * 1.5,
     radius: earthSize * 9.45, rotateSpeed: earthRotateSpeed * 2.35,
     color: 0xffffff,
     x: 0, y:0, z:0
@@ -247,7 +221,7 @@ function init() {
     name: "Uranus", texture: textureUranus,
     ringsTexture: textureUranusRings, ringAngle: 0,
     ringDistance: earthSize * 1.5, ringSize: earthSize * 2.00,
-    orbit: orbits.get("Uranus"), speed: earthSpeed * 2.0,
+    orbit: orbits.get("Uranus").orbitSize, speed: earthSpeed * 2.0,
     radius: earthSize * 4.00, rotateSpeed: earthRotateSpeed * 1.34,
     color: 0xffffff,
     x: 0, y:0, z:0
@@ -255,7 +229,7 @@ function init() {
 
   planets.set("Neptune", new SolarLib.Planet({
     name: "Neptune", texture: textureNeptune,
-    orbit: orbits.get("Neptune"), speed: earthSpeed * 2.5,
+    orbit: orbits.get("Neptune").orbitSize, speed: earthSpeed * 2.5,
     radius: earthSize * 3.88, rotateSpeed: earthRotateSpeed * 1.25,
     color: 0xffffff,
     x: 0, y:0, z:0
@@ -263,7 +237,7 @@ function init() {
 
   planets.set("Pluto", new SolarLib.Planet({
     name: "Pluto", texture: texturePluto,
-    orbit: orbits.get("Pluto"), speed: earthSpeed * 3.0,
+    orbit: orbits.get("Pluto").orbitSize, speed: earthSpeed * 3.0,
     radius: earthSize * 0.19, rotateSpeed: earthRotateSpeed * 0.3,
     color: 0xffffff,
     x: 0, y:0, z:0
@@ -300,20 +274,6 @@ function init() {
 
 
 // START FUNCTION DEFINITIONS ------------------------------------------------------
-
-  function drawOrbit(radius = 200, segments = 360) {
-    var material = new THREE.LineBasicMaterial({ color:0xffffff });
-    var geometry = new THREE.Geometry();
-
-    for(let i=0; i <= segments; i++) {
-      var theta = i/segments * Math.PI * 2;
-      geometry.vertices.push(
-        new THREE.Vector3(Math.cos(theta) * radius, 0, Math.sin(theta) * radius)
-      );
-    }
-
-    scene.add( new THREE.Line(geometry, material) );
-  }
 
   function setupGui() {
     // initialize the guiControls
@@ -364,7 +324,7 @@ function init() {
     _animateSun(time);
 
     planets.forEach( (planet, key, map) => {
-      planet.update(scene, time);
+      planet.update(time);
     });
 
     renderer.render( scene, camera );

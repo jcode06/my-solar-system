@@ -9,8 +9,9 @@ window.SolarLib = window.SolarLib || {};
   SolarLib.PlanetWithRings = PlanetWithRings;
   SolarLib.Sun = Sun;
   SolarLib.Stars = Stars;
+  SolarLib.Orbit = Orbit;
 
-  function Planet(params) {
+  function Planet(params = {}) {
       this.name         = params.name || "Obj" + Date.now() + (Math.random() * 1000);
       this.texture      = params.texture || "";
       this.orbit        = !Number.isNaN(params.orbit) ? params.orbit : 0;
@@ -45,7 +46,7 @@ window.SolarLib = window.SolarLib || {};
     return this.object;
   } // end Planet.create
 
-  Planet.prototype.update = function(curTime) {
+  Planet.prototype.update = function(curTime = 0) {
     if(this.object != undefined) {
       var orbitSize = this.orbit;
       var x, y, z;
@@ -82,7 +83,7 @@ window.SolarLib = window.SolarLib || {};
     }
   } // end Planet.update
 
-  function PlanetWithRings(params) {
+  function PlanetWithRings(params = {}) {
     Planet.call(this, params);
 
     this.ringsTexture = params.ringsTexture || "";
@@ -129,7 +130,7 @@ window.SolarLib = window.SolarLib || {};
   } // end PlanetWithRings.update
 
 
-  function Sun(params) {
+  function Sun(params = {}) {
 
   } // end Sun
   Sun.prototype.create = function() {
@@ -157,7 +158,7 @@ window.SolarLib = window.SolarLib || {};
     this.stars = [];
   } // end Stars
 
-  Stars.prototype.create = function(targetScene) {
+  Stars.prototype.create = function() {
     var i, starsGeometry = [ new THREE.Geometry(), new THREE.Geometry() ];
     for ( i = 0; i < this.brightStars; i ++ ) {
       var vertex = new THREE.Vector3();
@@ -195,22 +196,39 @@ window.SolarLib = window.SolarLib || {};
       stars.updateMatrix();
 
       this.stars.push(stars);
-//      targetScene.add( stars );
     }
 
     return this.stars;
   } // end Stars.create
 
 
-  function Orbit(params) {
+  function Orbit(params = {}) {
+    this.name         = params.name || "Orbit" + Date.now() + (Math.random() * 1000);
+    this.orbitSize    = !isNaN(params.orbitSize) ? params.orbitSize : 50;
+    this.segments     = !isNaN(params.segments) ? params.segments : 360;
+    this.color        = params.color || 0xffffff;
 
+    this.object       = null;
   } // end Orbit
   Orbit.prototype.create = function() {
 
   } // end Orbit.create
-  Orbit.prototype.draw = function() {
 
+  Orbit.prototype.draw = function() {
+    var material = new THREE.LineBasicMaterial({ color: this.color });
+    var geometry = new THREE.Geometry();
+
+    for(let i=0; i <= this.segments; i++) {
+      var theta = i/this.segments * Math.PI * 2;
+      geometry.vertices.push(
+        new THREE.Vector3(Math.cos(theta) * this.orbitSize, 0, Math.sin(theta) * this.orbitSize)
+      );
+    }
+
+    this.object = new THREE.Line(geometry, material);
+    return this.object;
   } // end Orbit.draw
+
   Orbit.prototype.update = function() {
 
   } // end Orbit.update
