@@ -129,16 +129,176 @@ window.SolarLib = window.SolarLib || {};
     return this.object;
   } // end PlanetWithRings.update
 
-
+  // TODO: Emit warning message if textures are null on object instantiation or creation
   function Sun(params = {}) {
 
-  } // end Sun
-  Sun.prototype.create = function() {
+    this.name = params.name || "Sun" + Date.now() + (Math.random() * 1000);
+    this.glowName = params.glowName || "SunGlow" + Date.now() + (Math.random() * 1000);
 
+    this.sunMaterial = params.sunMaterial || null;
+    this.glowMaterial = params.glowMaterial || null;
+    this.sunSize = !isNaN(params.sunSize) ? params.sunSize : 500;
+    this.glowSize = !isNaN(params.glowSize) ? params.glowSize : this.glowSize + 250;
+
+    this.x            = !Number.isNaN(params.x) ? params.x : 0;
+    this.y            = !Number.isNaN(params.y) ? params.y : 0;
+    this.z            = !Number.isNaN(params.z) ? params.z : 0;
+    this.object       = null;
+    this.glowObject   = null;
+
+    this.sunDisplacement = null;
+    this.sunNoise        = null;
+
+    params.glowUniforms = params.glowUniforms || {};
+    this.glowUniforms = {
+      glowFactor:        { value: params.glowUniforms.glowFactor || 0.3 },
+      glowPower:         { value: params.glowUniforms.glowPower || 1.25 },
+      vNormMultiplier:   { value: params.glowUniforms.vNormMultiplier || 1.0 },
+      viewVector:        { value: params.glowUniforms.viewVector || new THREE.Vector3(this.x, this.y, this.z) },
+      iTime:             { value: params.glowUniforms.iTime || 0.1 },
+      bumpTexture:       { value: params.glowUniforms.bumpTexture || null },
+      bumpScale:         { value: params.glowUniforms.bumpScale || 40.0 },
+      bumpSpeed:         { value: params.glowUniforms.bumpSpeed || 1.5 },
+      iResolution:       { value: params.glowUniforms.iResolution || new THREE.Vector2(window.innerWidth, window.innerHeight) }
+    }
+
+    params.sunUniforms = params.sunUniforms || {};
+    this.sunUniforms = {
+      amplitude:              { value: params.sunUniforms.amplitude || 1.0 },
+      texture:                { value: params.sunUniforms.texture || null },
+      sphereTexture:          { value: params.sunUniforms.sphereTexture || null },
+      iTime:                  { value: params.sunUniforms.iTime || 0.1 },
+      brightnessMultiplier:   { value: params.sunUniforms.brightnessMultiplier || 7.0 },
+      iResolution:            { value: params.sunUniforms.iResolution || new THREE.Vector2(window.innerWidth, window.innerHeight) }
+    }
+
+
+  } // end Sun
+
+  Sun.prototype.create = function(parentObj) {
+    // we must reuse a shader material created for the sun
+    if(!this.sunMaterial || !this.glowMaterial) { return; }
+
+    this.sunUniforms.texture.value.wrapS = this.sunUniforms.texture.value.wrapT = THREE.RepeatWrapping;
+//    sunUniforms.texture.wrapS = sunUniforms.texture.wrapT = THREE.RepeatWrapping;
+
+    this.glowMaterial.uniforms = this.glowUniforms;
+    this.sunMaterial.uniforms = this.sunUniforms;
+
+    var sun = _makeSun.call(this);
+    var sunGlow = _makeGlow.call(this);
+
+    sun.add(sunGlow);
+    this.object = sun;
+    this.glowObject = sunGlow;
+
+    return { sun: this.object, glow: this.glowObject };
+
+    function _makeSun() {
+      var sunGeometry = new THREE.SphereBufferGeometry(this.sunSize, 64, 64);
+
+      this.sunDisplacement = new Float32Array( sunGeometry.attributes.position.count );
+      this.sunNoise        = new Float32Array( sunGeometry.attributes.position.count );
+
+      for( let i=0; i < this.sunDisplacement.length; i++) {
+        this.sunNoise[i] = Math.random() * 5;
+      }
+
+      sunGeometry.addAttribute('displacement', new THREE.BufferAttribute(this.sunDisplacement, 1) );
+
+      var sunObj = new THREE.Mesh( sunGeometry, this.sunMaterial );
+      sunObj.name = this.name;
+
+      sunObj.position.set(this.x, this.y, this.z);
+
+      return sunObj;
+    }
+
+    function _makeGlow() {
+        var ballGeometry = new THREE.SphereGeometry( this.sunSize + 250, 32, 16 );
+      	var sunGlow = new THREE.Mesh( ballGeometry, this.glowMaterial );
+        sunGlow.name = this.glowName;
+
+        sunGlow.position.set(this.x, this.y, this.z);
+
+        return sunGlow;
+    }
   } // end Sun.create
-  Sun.prototype.update = function() {
+
+  Sun.prototype.update = function(curTime, clock, camera, sunControls = null, glowControls = null) {
+    if(this.object != undefined) {
+      var rotationRadians = curTime * Math.PI/180;
+
+      //      this.object.matrixAutoUpdate = false;
+      //      this.object.matrix.makeRotationY(rotationRadians);
+
+      this.sunUniforms.iTime.value += (sunControls && sunControls.timeFactor) ?
+        clock.getDelta() * sunControls.timeFactor :
+        clock.getDelta() * -0.15;
+
+      if(sunControls != undefined) {
+        var timeRadians = curTime*5 * Math.PI/180
+
+        this.sunUniforms.brightnessMultiplier.value = sunControls.brightness;
+
+        // Amplitude controls the amount of fuzziness in the border, as well as
+        // rotation within the vertex
+        this.sunUniforms.amplitude.value = sunControls.amplitude * Math.sin( timeRadians * 0.125 );
+
+        var displacementRadians = sunControls.displacement * Math.PI/180;
+
+        for ( var i = 0; i < this.sunDisplacement.length; i ++ ) {
+
+  //    				sunDisplacement[ i ] = (Math.sin(5.0 * i + Date.now() * Math.PI/180 ) + 5.5) / 2;
+  //    				sunDisplacement[ i ] = Math.sin( 5.0 * i + curTime );
+  /*
+            // -0.25 to 0.25
+            sunNoise[ i ] += 0.5 * ( 0.5 - Math.random() );
+            sunNoise[ i ] = THREE.Math.clamp( sunNoise[ i ], -2, 15 );
+
+            sunDisplacement[ i ] += sunNoise[ i ];
+  */
+  //            sunDisplacement[ i ] = Math.sin( displacementRadians * i );
+
+
+  //            sunNoise[ i ] += 0.02 * ( 0.5 - Math.random() );
+  //            sunDisplacement[ i ] += sunNoise[ i ];
+  //            sunDisplacement[ i ] += guiControls.noise * Math.max( (Math.random() / 2 + 0.5), 0.2);
+        }
+
+        this.object.geometry.attributes.displacement.needsUpdate = true;
+      }
+
+
+
+
+    }
+
+    this.glowUniforms.iTime.value += (glowControls && glowControls.glowTimeFactor) ?
+      clock.getDelta() * glowControls.glowTimeFactor :
+      clock.getDelta() * 1.5;
+
+    if(this.glowObject != undefined && glowControls != undefined) {
+      this.glowUniforms.glowFactor.value = glowControls.glowFactor;
+      this.glowUniforms.glowPower.value = glowControls.glowPower;
+      this.glowUniforms.vNormMultiplier.value = glowControls.vNormMultiplier;
+
+      this.glowUniforms.bumpScale.value = glowControls.bumpScale;
+      this.glowUniforms.bumpSpeed.value = glowControls.bumpSpeed;
+
+      this.glowObject.scale.set(glowControls.size, glowControls.size, glowControls.size);
+
+      var subVector = new THREE.Vector3().subVectors( camera.position, this.glowObject.position );
+
+      this.glowUniforms.viewVector.value = subVector;
+    }
 
   } // end Sun.update
+
+  Sun.prototype.onResize = function(width, height) {
+    this.glowUniforms.iResolution.value = new THREE.Vector2(width, height);
+    this.sunUniforms.iResolution.value = new THREE.Vector2(width, height);
+  }
 
 
   function Stars(params = {}) {

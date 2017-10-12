@@ -2,17 +2,17 @@ A Basic Solar System Simulation
 - First WebGL Project, helps with understanding rotation, translation in WebGL/Three.js better, as well as shaders/GLSL.
 
 TODOS:
-- MOBILE: Adjust size of the dat.gui menu so the font is larger on mobile
-- Refactor:
-  - Put the Sun in its own object
-  - Two methods:
-    - create - called on instantiation
-    - update - called in the animate function
-  - Make it easier to add globals to the dat.gui menu, so we can more easily manipulate the scene
+- Make it easier to add globals to the dat.gui menu, so we can more easily manipulate the scene
 - Sun Texture: There's an obvious break in the texture overlay, figure out how to smooth it out
 - Figure out a way to make the smaller planets more visible in relation to the sun, right now they are too small
 - Enable explorer camera controls (FlyControls)
-- OPTIONAL:
+
+BUGS:
+- MOBILE: Adjust size of the dat.gui menu so the font is larger on mobile
+- MOBILE: Cache seems to be saved when reloading a page, so sometimes the camera is off-center, and hard to manipulate
+- ALL: Corona layer isn't aligned when the sun is positioned off-center, or not (0,0,0)
+
+OPTIONAL:
   - Add shadows to the planets when applicable
   - Asteroid belt between Mars and Jupiter
     - Figure out how to draw asteroids

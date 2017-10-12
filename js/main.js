@@ -14,12 +14,11 @@ var width = window.innerWidth;
 var height = window.innerHeight;
 var aspectRatio = width / height;
 
-var sun, sunGlow;
+var solarBodies = new Map();
 var planets = new Map();
 var orbits = new Map();
 
 var clock;
-var sunUniforms, glowUniforms, sunDisplacement, sunNoise;
 var sunControls, glowControls;
 
 function init() {
@@ -79,6 +78,7 @@ function init() {
 
   window.addEventListener( 'resize', onWindowResize, false );
 
+
   // create our solar objects as the textures get loaded
   // size the system in relation to earth and the sun
   var sunSize   = 300;
@@ -86,22 +86,8 @@ function init() {
   var earthOrbit = 4 * sunSize;
   var earthSpeed = 1; // lower number = faster, higher number = slower
   var earthRotateSpeed = 1;
-  var lineSegments = 360;
-
-  glowUniforms = {
-    glowFactor: { value: 0.3 },
-    glowPower: { value: 1.25 },
-    vNormMultiplier: { value: 1.0 },
-    viewVector: { type: "v3", value: camera.position },
-    iTime: { value: 0.1 },
-    bumpTexture: { value: textureSun2 },
-    bumpScale: { value: 40.0 },
-    bumpSpeed: { value: 1.5 },
-    iResolution: { value: new THREE.Vector2(width, height) }
-  }
 
   var glowMaterial = new THREE.ShaderMaterial({
-    uniforms: glowUniforms,
     vertexShader:   exports.shaderGlow.vertex,
     fragmentShader: exports.shaderGlow.fragment,
     side: THREE.BackSide,
@@ -109,44 +95,38 @@ function init() {
 		transparent: true
   });
 
-  sunUniforms = {
-    amplitude: { value: 1.0 },
-//    texture: { value: textureSun },
-    texture: { value: textureSun2 },
-    sphereTexture: { value: textureSun2 },
-    iTime: { value: 0.1 },
-    brightnessMultiplier: { value: 7.0 },
-    iResolution: { value: new THREE.Vector2(width, height) }
-  }
-  sunUniforms.texture.value.wrapS = sunUniforms.texture.value.wrapT = THREE.RepeatWrapping;
-
   var shaderMaterial = new THREE.ShaderMaterial({
-    uniforms: sunUniforms,
     vertexShader: exports.shader.vertex,
     fragmentShader: exports.shader.fragment
   });
 
-  var sunGeometry = new THREE.SphereBufferGeometry(sunSize, 64, 64),
 
-  sunDisplacement = new Float32Array( sunGeometry.attributes.position.count );
-  sunNoise        = new Float32Array( sunGeometry.attributes.position.count );
+//for(let i=0; i < 3; i++) {
 
-  for( let i=0; i < sunDisplacement.length; i++) {
-    sunNoise[i] = Math.random() * 5;
-  }
-  sunGeometry.addAttribute('displacement', new THREE.BufferAttribute(sunDisplacement, 1) );
+  var sun = new SolarLib.Sun({
+//    x: (Math.random() * 2 - 1) * 1000,
+//    y: (Math.random() * 2 - 1) * 500,
+//    z: (Math.random() * 2 - 1) * 2000,
+//    x: 1000, y: 500, z: 2000,
+    x: 0, y: 0, z: 0,
+    sunSize,
+    glowUniforms: {
+      bumpTexture: textureSun2
+    },
+    sunUniforms: {
+      texture: textureSun2,
+      sphereTexture: textureSun2,
+    }
+  });
+  sun.sunMaterial = shaderMaterial;
+  sun.glowMaterial = glowMaterial;
+  var sunObj = sun.create();
+  scene.add( sunObj.sun );
+  scene.add( sunObj.glow );
 
-  sun = new THREE.Mesh(
-          sunGeometry,
-          shaderMaterial
-  );
-  sun.name = "Sun";
-  pointLight.add(sun);
+  solarBodies.set(sun.name, sun);
 
-  var ballGeometry = new THREE.SphereGeometry( sunSize + 250, 32, 16 );
-	sunGlow = new THREE.Mesh( ballGeometry, glowMaterial );
-  sunGlow.name = "SunGlow";
-  pointLight.add(sunGlow);
+// } // end for
 
   // create orbit sizes
   orbits.set("Mercury", new SolarLib.Orbit({ name: "Mercury", orbitSize: earthOrbit * .57 }) );
@@ -256,11 +236,10 @@ function init() {
     scene.add(starInst);
   }
 
-/*
   // Fly Controls, currently not working
-	controls = new THREE.FlyControls( camera );
-	controls.movementSpeed = 1000;
-	controls.domElement = renderer.domElement;
+/*
+	controls = new THREE.FlyControls( camera, renderer.domElement );
+	controls.movementSpeed = 1;
 	controls.rollSpeed = Math.PI / 24;
 	controls.autoForward = false;
 	controls.dragToLook = false;
@@ -321,73 +300,32 @@ function init() {
 
     var time = Date.now() * .01;
 
-    _animateSun(time);
+    var count = 0;
+    solarBodies.forEach( (solarBody, key, map) => {
+
+      solarBody.update(time, clock, camera, sunControls, glowControls);
+//      solarBody.update(time, clock, camera);
+
+/*
+count++;
+      if(count == 2) {
+        solarBody.update(time, clock, camera, sunControls, glowControls);
+      }
+      else {
+//        solarBody.update(time, clock, camera, sunControls, glowControls);
+        solarBody.update(time, clock, camera);
+      }
+*/
+
+    });
 
     planets.forEach( (planet, key, map) => {
       planet.update(time);
     });
 
+    controls.update( 1 );
+
     renderer.render( scene, camera );
-
-    // HELPERS ----------------------------------------------------------
-
-    function _animateSun(curTime) {
-      if(sun != undefined) {
-        var rotationRadians = curTime * Math.PI/180;
-        var timeRadians = curTime*5 * Math.PI/180
-
-        sunUniforms.iTime.value += clock.getDelta() * sunControls.timeFactor;
-        sunUniforms.brightnessMultiplier.value = sunControls.brightness;
-
-        glowUniforms.glowFactor.value = glowControls.glowFactor;
-        glowUniforms.glowPower.value = glowControls.glowPower;
-        glowUniforms.vNormMultiplier.value = glowControls.vNormMultiplier;
-
-        glowUniforms.bumpScale.value = glowControls.bumpScale;
-        glowUniforms.bumpSpeed.value = glowControls.bumpSpeed;
-
-        // Amplitude controls the amount of fuzziness in the border, as well as
-        // rotation within the vertex
-        sunUniforms.amplitude.value = sunControls.amplitude * Math.sin( timeRadians * 0.125 );
-
-        var displacementRadians = sunControls.displacement * Math.PI/180;
-
-        for ( var i = 0; i < sunDisplacement.length; i ++ ) {
-
-//    				sunDisplacement[ i ] = (Math.sin(5.0 * i + Date.now() * Math.PI/180 ) + 5.5) / 2;
-//    				sunDisplacement[ i ] = Math.sin( 5.0 * i + curTime );
-/*
-            // -0.25 to 0.25
-   				  sunNoise[ i ] += 0.5 * ( 0.5 - Math.random() );
-    				sunNoise[ i ] = THREE.Math.clamp( sunNoise[ i ], -2, 15 );
-
-    				sunDisplacement[ i ] += sunNoise[ i ];
-*/
-//            sunDisplacement[ i ] = Math.sin( displacementRadians * i );
-
-
-//            sunNoise[ i ] += 0.02 * ( 0.5 - Math.random() );
-//            sunDisplacement[ i ] += sunNoise[ i ];
-//            sunDisplacement[ i ] += guiControls.noise * Math.max( (Math.random() / 2 + 0.5), 0.2);
-  			}
-
-  			sun.geometry.attributes.displacement.needsUpdate = true;
-
-        sun.matrixAutoUpdate = false;
-//        sun.matrix.makeRotationY(rotationRadians);
-
-      }
-
-      if(sunGlow != undefined) {
-        sunGlow.scale.set(glowControls.size, glowControls.size, glowControls.size);
-
-        var subVector = new THREE.Vector3().subVectors( camera.position, sunGlow.position );
-
-        glowUniforms.viewVector.value = subVector;
-        glowUniforms.iTime.value += clock.getDelta() * glowControls.glowTimeFactor;
-      }
-
-    } // end _sunAnimate()
 
   } // end animate()
 
@@ -397,8 +335,9 @@ function init() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 
-    glowUniforms.iResolution.value = new THREE.Vector2(width, height);
-    sunUniforms.iResolution.value = new THREE.Vector2(width, height);
+    solarBodies.forEach( (solarBody, key, map) => {
+      solarBody.onResize(window.innerWidth, window.innerHeight);
+    });
 
     renderer.setSize( window.innerWidth, window.innerHeight );
 
