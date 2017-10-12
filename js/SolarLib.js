@@ -151,24 +151,24 @@ window.SolarLib = window.SolarLib || {};
 
     params.glowUniforms = params.glowUniforms || {};
     this.glowUniforms = {
-      glowFactor:        { value: params.glowUniforms.glowFactor || 0.3 },
-      glowPower:         { value: params.glowUniforms.glowPower || 1.25 },
+      glowFactor:        { value: params.glowUniforms.glowFactor || 0.28 },
+      glowPower:         { value: params.glowUniforms.glowPower || 7.33 },
       vNormMultiplier:   { value: params.glowUniforms.vNormMultiplier || 1.0 },
       viewVector:        { value: params.glowUniforms.viewVector || new THREE.Vector3(this.x, this.y, this.z) },
       iTime:             { value: params.glowUniforms.iTime || 0.1 },
       bumpTexture:       { value: params.glowUniforms.bumpTexture || null },
-      bumpScale:         { value: params.glowUniforms.bumpScale || 40.0 },
-      bumpSpeed:         { value: params.glowUniforms.bumpSpeed || 1.5 },
+      bumpScale:         { value: params.glowUniforms.bumpScale || 61.0 },
+      bumpSpeed:         { value: params.glowUniforms.bumpSpeed || 0.60 },
       iResolution:       { value: params.glowUniforms.iResolution || new THREE.Vector2(window.innerWidth, window.innerHeight) }
     }
 
     params.sunUniforms = params.sunUniforms || {};
     this.sunUniforms = {
-      amplitude:              { value: params.sunUniforms.amplitude || 1.0 },
+      amplitude:              { value: params.sunUniforms.amplitude || 8.0 },
       texture:                { value: params.sunUniforms.texture || null },
       sphereTexture:          { value: params.sunUniforms.sphereTexture || null },
       iTime:                  { value: params.sunUniforms.iTime || 0.1 },
-      brightnessMultiplier:   { value: params.sunUniforms.brightnessMultiplier || 7.0 },
+      brightnessMultiplier:   { value: params.sunUniforms.brightnessMultiplier || 8.0 },
       iResolution:            { value: params.sunUniforms.iResolution || new THREE.Vector2(window.innerWidth, window.innerHeight) }
     }
 
@@ -177,7 +177,14 @@ window.SolarLib = window.SolarLib || {};
 
   Sun.prototype.create = function(parentObj) {
     // we must reuse a shader material created for the sun
-    if(!this.sunMaterial || !this.glowMaterial) { return; }
+    if(!this.sunMaterial || !this.glowMaterial) {
+      console.error(this.name + " not created, sun and/or glow materials missing.");
+      return;
+    }
+    if(!this.sunUniforms.texture.value || !this.sunUniforms.sphereTexture.value || !this.glowUniforms.bumpTexture.value) {
+      console.error(this.name + " not created, sun and/or glow textures missing.");
+      return;
+    }
 
     this.sunUniforms.texture.value.wrapS = this.sunUniforms.texture.value.wrapT = THREE.RepeatWrapping;
 //    sunUniforms.texture.wrapS = sunUniforms.texture.wrapT = THREE.RepeatWrapping;
@@ -234,7 +241,7 @@ window.SolarLib = window.SolarLib || {};
 
       this.sunUniforms.iTime.value += (sunControls && sunControls.timeFactor) ?
         clock.getDelta() * sunControls.timeFactor :
-        clock.getDelta() * -0.15;
+        clock.getDelta() * -2.15;
 
       if(sunControls != undefined) {
         var timeRadians = curTime*5 * Math.PI/180
@@ -268,15 +275,16 @@ window.SolarLib = window.SolarLib || {};
 
         this.object.geometry.attributes.displacement.needsUpdate = true;
       }
-
-
-
-
     }
 
     this.glowUniforms.iTime.value += (glowControls && glowControls.glowTimeFactor) ?
       clock.getDelta() * glowControls.glowTimeFactor :
       clock.getDelta() * 1.5;
+
+    var subVector = new THREE.Vector3().subVectors( camera.position, this.glowObject.position );
+
+    this.glowUniforms.viewVector.value = subVector;
+
 
     if(this.glowObject != undefined && glowControls != undefined) {
       this.glowUniforms.glowFactor.value = glowControls.glowFactor;
@@ -287,10 +295,6 @@ window.SolarLib = window.SolarLib || {};
       this.glowUniforms.bumpSpeed.value = glowControls.bumpSpeed;
 
       this.glowObject.scale.set(glowControls.size, glowControls.size, glowControls.size);
-
-      var subVector = new THREE.Vector3().subVectors( camera.position, this.glowObject.position );
-
-      this.glowUniforms.viewVector.value = subVector;
     }
 
   } // end Sun.update

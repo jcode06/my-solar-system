@@ -101,7 +101,7 @@ function init() {
   });
 
 
-//for(let i=0; i < 3; i++) {
+//for(let i=0; i < 1; i++) {
 
   var sun = new SolarLib.Sun({
 //    x: (Math.random() * 2 - 1) * 1000,
@@ -304,10 +304,8 @@ function init() {
     solarBodies.forEach( (solarBody, key, map) => {
 
       solarBody.update(time, clock, camera, sunControls, glowControls);
-//      solarBody.update(time, clock, camera);
-
 /*
-count++;
+      count++;
       if(count == 2) {
         solarBody.update(time, clock, camera, sunControls, glowControls);
       }
@@ -316,7 +314,6 @@ count++;
         solarBody.update(time, clock, camera);
       }
 */
-
     });
 
     planets.forEach( (planet, key, map) => {
