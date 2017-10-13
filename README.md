@@ -2,6 +2,7 @@ A Basic Solar System Simulation
 - First WebGL Project, helps with understanding rotation, translation in WebGL/Three.js better, as well as shaders/GLSL.
 
 TODOS:
+- Sun/Glow Texture: Add color uniforms so we can modify the color and create different colored suns
 - Make it easier to add globals to the dat.gui menu, so we can more easily manipulate the scene
 - Sun Texture: There's an obvious break in the texture overlay, figure out how to smooth it out
 - Figure out a way to make the smaller planets more visible in relation to the sun, right now they are too small
