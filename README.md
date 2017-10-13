@@ -3,13 +3,11 @@ A Basic Solar System Simulation
 
 TODOS:
 - Sun/Glow Texture: Add color uniforms so we can modify the color and create different colored suns
-- Make it easier to add globals to the dat.gui menu, so we can more easily manipulate the scene
 - Sun Texture: There's an obvious break in the texture overlay, figure out how to smooth it out
 - Figure out a way to make the smaller planets more visible in relation to the sun, right now they are too small
 - Enable explorer camera controls (FlyControls)
 
 BUGS:
-- MOBILE: Adjust size of the dat.gui menu so the font is larger on mobile
 - MOBILE: Cache seems to be saved when reloading a page, so sometimes the camera is off-center, and hard to manipulate
 - ALL: Corona layer isn't aligned when the sun is positioned off-center, or not (0,0,0)
 
